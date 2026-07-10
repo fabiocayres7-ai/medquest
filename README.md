@@ -34,28 +34,32 @@ Assim cada colega acessa por um link e todos podem competir no ranking.
 
 ---
 
-## 🏆 Ranking com os colegas — dois modos
+## 🏆 Ranking com os colegas
 
-### Modo local (padrão, zero configuração)
-Cada um tem um **código de jogador** (aba **Ranking**). Vocês trocam os códigos (WhatsApp, etc.)
-e colam o do colega no app — todos aparecem no mesmo ranking. Simples, mas manual (atualiza quando trocam os códigos).
+### Modo GitHub (padrão) — online, sem cadastro em nada
+Já vem **ligado e funcionando**. Usa o próprio repositório + GitHub Actions como servidor do placar.
 
-### Modo online (ranking automático e ao vivo) — via Supabase (grátis)
-Placar compartilhado que atualiza sozinho. Passo a passo:
+Como cada colega participa:
+1. Abre o link do app e joga.
+2. Na aba **Ranking**, toca em **📤 Publicar minha pontuação**.
+3. Abre uma página do GitHub já preenchida — é só clicar no botão verde **Submit new issue** (precisa estar logado no GitHub).
+4. Em ~1 minuto um robô (GitHub Actions) atualiza o placar e todo mundo vê. É só tocar em **🔄 Atualizar ranking**.
 
-1. Crie conta em https://supabase.com → **New project** (guarde a senha).
-2. No projeto, abra **SQL Editor**, cole o conteúdo de [`supabase-schema.sql`](supabase-schema.sql) e clique **Run**.
-3. Vá em **Project Settings → API** e copie:
-   - **Project URL** (ex.: `https://abcd.supabase.co`)
-   - **anon public key**
-4. Abra `js/config.js` e preencha:
-   ```js
-   SUPABASE_URL: "https://abcd.supabase.co",
-   SUPABASE_ANON_KEY: "sua-anon-key",
-   ```
-5. Faça o commit/upload de novo. Pronto — todos que usarem o mesmo link e a mesma **TURMA** entram no ranking automático.
+> Ver o ranking **não** exige nada; só **publicar** a própria pontuação precisa de conta no GitHub (gratuita).
+> Funciona porque o placar fica em `leaderboard.json`, atualizado automaticamente pelo workflow em `.github/workflows/leaderboard.yml`.
 
-> Segurança: é um placar de turma (baixo risco). A chave `anon` é pública por design. Não coloque dados sensíveis.
+### Modo local (offline) — código de jogador
+Sempre disponível como alternativa: cada um copia seu **código** (aba Ranking) e cola o do colega. Bom para quem não tem GitHub.
+
+### Modo Supabase (opcional) — ranking 100% automático
+Se preferir que a pontuação suba sozinha (sem clicar em "Publicar"), dá para usar o Supabase:
+1. Crie conta em https://supabase.com → **New project**.
+2. Em **SQL Editor**, cole [`supabase-schema.sql`](supabase-schema.sql) e **Run**.
+3. Em **Project Settings → API**, copie a **URL** e a **anon key**.
+4. Em `js/config.js`, mude `RANKING_PROVIDER: "supabase"` e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`.
+5. Commit/push. Todos da mesma **TURMA** entram no placar automaticamente.
+
+> Segurança: é um placar de turma (baixo risco), sem dados sensíveis.
 
 ---
 
@@ -69,7 +73,7 @@ Dica: dividam as disciplinas entre o grupo e cada um cria 10 questões da sua pa
 ---
 
 ## 🎮 O que já vem pronto
-- **39 questões** de raciocínio clínico (com vinheta + explicação do porquê de cada alternativa) e **47 flashcards**, nas 8 disciplinas do semestre.
+- **63 questões** de raciocínio clínico (com vinheta + explicação do porquê de cada alternativa) e **61 flashcards**, nas 8 disciplinas do semestre (com ênfase em MAD II e Prática Clínica).
 - **Níveis:** Calouro → Interno → Plantonista → Residente → Preceptor → Especialista → Chefe de Equipe → Professor → Livre-Docente → **Lenda da Mandic**.
 - **XP** por acerto (mais para questões difíceis) e por revisão de flashcard; **bônus de streak**.
 - **Streak diário**, **missões diárias**, **12 conquistas**, **barras de progresso por disciplina**.
