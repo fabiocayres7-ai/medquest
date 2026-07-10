@@ -2,16 +2,24 @@
    MedQuest 5 — Configuração
    ------------------------------------------------------------
    O app funciona 100% offline (modo local) sem mexer aqui.
-   Para ativar o RANKING ONLINE compartilhado com a turma,
-   preencha os 3 campos abaixo (veja README.md e supabase-schema.sql).
+   O RANKING ONLINE já vem ligado no modo "github" (usa o
+   próprio repositório + GitHub Actions — não precisa de conta
+   em nenhum outro serviço).
    ============================================================ */
 
 window.MEDQUEST_CONFIG = {
   // Nome da turma/grupo (aparece no ranking e separa os grupos)
   TURMA: "Mandic 5º sem",
 
-  // --- Ranking online (opcional) via Supabase ---
-  // Deixe "" para usar somente o ranking local (código de jogador).
-  SUPABASE_URL: "",        // ex.: "https://xxxx.supabase.co"
-  SUPABASE_ANON_KEY: "",   // a chave "anon public" do projeto
+  // Provedor do ranking: "github" | "supabase" | "local"
+  RANKING_PROVIDER: "github",
+
+  // --- Modo GitHub (padrão) ---
+  // Dono e nome do repositório onde o app está publicado.
+  GH_OWNER: "fabiocayres7-ai",
+  GH_REPO:  "medquest",
+
+  // --- Modo Supabase (alternativa; deixe vazio se usar o GitHub) ---
+  SUPABASE_URL: "",
+  SUPABASE_ANON_KEY: "",
 };

@@ -187,10 +187,21 @@ function importCode(code){
   }catch(e){ toast("Código inválido."); }
 }
 
-/* ---- Supabase (online, opcional) ---- */
-function online(){ return CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY; }
+/* ---- Provedores de ranking online ---- */
+function provider(){
+  const p=(CFG.RANKING_PROVIDER||"").toLowerCase();
+  if(p==="github" && CFG.GH_OWNER && CFG.GH_REPO) return "github";
+  if(p==="supabase" && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) return "supabase";
+  if(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) return "supabase";     // auto
+  if(CFG.GH_OWNER && CFG.GH_REPO) return "github";                     // auto
+  return "local";
+}
+function online(){ return provider()!=="local"; }
+function pagesBase(){ return "https://"+CFG.GH_OWNER+".github.io/"+CFG.GH_REPO; }
+
 async function syncOnline(){
-  if(!online() || !S.profile.name) return;
+  // Supabase sincroniza sozinho; GitHub usa envio manual (botão Publicar).
+  if(provider()!=="supabase" || !S.profile.name) return;
   try{
     await fetch(CFG.SUPABASE_URL+"/rest/v1/leaderboard",{
       method:"POST",
@@ -201,18 +212,42 @@ async function syncOnline(){
         answered:S.stats.answered,
         accuracy:S.stats.answered?Math.round(S.stats.correct/S.stats.answered*100):0 }])
     });
-  }catch(e){ /* silencioso */ }
+  }catch(e){}
 }
 async function fetchOnline(){
-  if(!online()) return null;
-  try{
-    const url=CFG.SUPABASE_URL+"/rest/v1/leaderboard?select=*&turma=eq."+encodeURIComponent(S.profile.turma)+"&order=xp.desc&limit=100";
-    const res=await fetch(url,{headers:{ "apikey":CFG.SUPABASE_ANON_KEY, "Authorization":"Bearer "+CFG.SUPABASE_ANON_KEY }});
-    if(!res.ok) return null;
-    const data=await res.json();
-    return data.map(d=>({id:d.player_id,name:d.name,xp:d.xp,level:d.level,streak:d.streak,
-      answered:d.answered,accuracy:d.accuracy,title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t}));
-  }catch(e){ return null; }
+  const p=provider();
+  if(p==="supabase"){
+    try{
+      const url=CFG.SUPABASE_URL+"/rest/v1/leaderboard?select=*&turma=eq."+encodeURIComponent(S.profile.turma)+"&order=xp.desc&limit=100";
+      const res=await fetch(url,{headers:{ "apikey":CFG.SUPABASE_ANON_KEY, "Authorization":"Bearer "+CFG.SUPABASE_ANON_KEY }});
+      if(!res.ok) return null;
+      const data=await res.json();
+      return data.map(d=>({id:d.player_id,name:d.name,xp:d.xp,level:d.level,streak:d.streak,
+        answered:d.answered,accuracy:d.accuracy,title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t}));
+    }catch(e){ return null; }
+  }
+  if(p==="github"){
+    try{
+      const res=await fetch(pagesBase()+"/leaderboard.json?t="+Date.now(),{cache:"no-store"});
+      if(!res.ok) return null;
+      const j=await res.json(); const players=j.players||{};
+      return Object.keys(players).map(id=>{ const d=players[id]; return {
+        id, name:d.name, xp:d.xp||0, level:d.level||1, streak:d.streak||0,
+        answered:d.answered||0, accuracy:d.accuracy||0, turma:d.turma,
+        title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t }; })
+        .filter(r=>!r.turma || r.turma===S.profile.turma);
+    }catch(e){ return null; }
+  }
+  return null;
+}
+// Envia a pontuação abrindo uma issue pré-preenchida (GitHub Actions atualiza o placar)
+function submitScoreGithub(){
+  if(!S.profile.name){ toast("Defina seu nome primeiro."); return; }
+  const title="score: "+S.profile.name;
+  const body="MQDATA:"+myCode()+"\n\n_(Não edite este texto. Basta clicar em **Submit new issue**. O ranking atualiza em ~1 minuto.)_";
+  const url="https://github.com/"+CFG.GH_OWNER+"/"+CFG.GH_REPO+"/issues/new?title="+encodeURIComponent(title)+"&body="+encodeURIComponent(body);
+  window.open(url,"_blank");
+  toast("Confirme o envio no GitHub (Submit new issue) 📤");
 }
 
 /* ============================================================
@@ -428,26 +463,43 @@ function viewFlash(m){
 
 /* ---------- RANKING ---------- */
 function viewRank(m){
+  const p=provider();
+  const modo = p==="github" ? "Modo online (GitHub) — publique sua pontuação e todos veem." :
+               p==="supabase" ? "Modo online (Supabase) — atualiza automaticamente." :
+               "Modo local — troque o código de jogador com os colegas.";
   const head=el("div","card");
-  head.innerHTML=`<h3>🏆 Ranking — ${esc(S.profile.turma)}</h3>
-    <p class="muted small">${online()?"Modo online (Supabase) ativo — atualiza automaticamente.":"Modo local — compartilhe seu código com os colegas para comparar."}</p>`;
+  head.innerHTML=`<h3>🏆 Ranking — ${esc(S.profile.turma)}</h3><p class="muted small">${modo}</p>`;
   m.appendChild(head);
+
+  // Botão de publicar (modo GitHub)
+  if(p==="github"){
+    const pub=el("div","card mt");
+    pub.innerHTML=`<h3>📤 Publicar minha pontuação</h3>
+      <p class="muted small mb">Clique, confirme no GitHub (botão verde <b>Submit new issue</b>) e em ~1 min você aparece no ranking de todos. Repita quando quiser atualizar seu XP.</p>`;
+    const pb=el("button","btn block","📤 Publicar "+S.xp+" XP no ranking");
+    pb.onclick=submitScoreGithub; pub.appendChild(pb);
+    const rf=el("button","btn ghost sm mt","🔄 Atualizar ranking"); rf.onclick=()=>render();
+    pub.appendChild(rf);
+    m.appendChild(pub);
+  }
 
   const list=el("div","mt"); list.id="ranklist";
   renderRankList(list, localRanking());
   m.appendChild(list);
 
   if(online()){
-    fetchOnline().then(rows=>{ if(rows&&rows.length){ // garante que 'eu' apareça
+    fetchOnline().then(rows=>{ if(rows&&rows.length){
       if(!rows.find(r=>r.id===S.profile.id)) rows.push(myRow());
+      // mistura com colegas locais que ainda não publicaram
+      S.friends.forEach(f=>{ if(!rows.find(r=>r.id===f.id)) rows.push(f); });
       rows.sort((a,b)=>b.xp-a.xp); renderRankList(list,rows);
     }});
   }
 
-  // Ferramentas de código local
+  // Ferramentas de código local (também servem de alternativa offline)
   const tools=el("div","card mt");
-  tools.innerHTML=`<h3>👥 Estudar com colegas (modo local)</h3>
-    <p class="muted small mb">Envie seu <b>código de jogador</b> para os colegas e cole o deles aqui. Assim vocês aparecem no mesmo ranking mesmo sem servidor.</p>`;
+  tools.innerHTML=`<h3>👥 Alternativa offline (código de jogador)</h3>
+    <p class="muted small mb">Sem internet ou sem GitHub? Envie seu <b>código</b> para os colegas e cole o deles aqui — vocês aparecem no mesmo ranking mesmo assim.</p>`;
   const myc=el("textarea","input"); myc.readOnly=true; myc.value=myCode(); myc.onclick=()=>{myc.select();document.execCommand&&document.execCommand("copy");toast("Código copiado!");};
   tools.appendChild(el("div","small muted","Seu código (toque para copiar):"));
   tools.appendChild(myc);

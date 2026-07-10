@@ -174,6 +174,187 @@ const QUESTIONS = [
     tags: ["sensibilidade", "triagem", "ELISA"]
   },
 
+  {
+    id: "mad11", discipline: "mad", phase: "N1", topic: "Imunidade inata vs adaptativa", difficulty: 2,
+    vignette: "Comparação entre os dois braços da resposta imune.",
+    question: "Qual característica é EXCLUSIVA da imunidade adaptativa?",
+    options: [
+      "Resposta imediata e inespecífica",
+      "Memória imunológica e especificidade por meio de receptores rearranjados (BCR/TCR)",
+      "Barreiras físicas como pele e mucosas",
+      "Fagocitose por neutrófilos e macrófagos",
+      "Ativação do complemento pela via alternativa"
+    ],
+    answer: 1,
+    explanation: "A imunidade ADAPTATIVA tem MEMÓRIA e ESPECIFICIDADE (receptores BCR/TCR gerados por recombinação V(D)J), com resposta mais lenta na primeira exposição e rápida/robusta na segunda. Fagocitose, barreiras e complemento (alternativa) são da imunidade INATA (imediata, inespecífica, sem memória).",
+    tags: ["inata", "adaptativa", "memória"]
+  },
+  {
+    id: "mad12", discipline: "mad", phase: "N1", topic: "Sistema complemento", difficulty: 3,
+    vignette: "Estudo das funções do sistema complemento na defesa.",
+    question: "Qual associação entre componente do complemento e função está CORRETA?",
+    options: [
+      "C3b — principal anafilotoxina responsável pela vasodilatação",
+      "C3b — opsonização, facilitando a fagocitose",
+      "C5a — formação do complexo de ataque à membrana (MAC)",
+      "C1 — quimiotaxia de neutrófilos como função principal",
+      "C9 — opsonização de bactérias encapsuladas"
+    ],
+    answer: 1,
+    explanation: "C3b é a principal OPSONINA do complemento (recobre o patógeno → fagocitose via receptor CR1). As ANAFILOTOXINAS (vasodilatação, quimiotaxia) são C3a e C5a — C5a é potente quimiotático. O MAC é formado por C5b-C9 (lise). Deficiência de C5-C9 predispõe a infecções por Neisseria.",
+    tags: ["complemento", "C3b", "opsonização"]
+  },
+  {
+    id: "mad13", discipline: "mad", phase: "N1", topic: "Classes de anticorpos", difficulty: 2,
+    vignette: "Um paciente tem infecção aguda e o laboratório dosa imunoglobulinas.",
+    question: "Qual classe de anticorpo indica tipicamente infecção RECENTE/aguda e é a primeira a surgir?",
+    options: [
+      "IgG",
+      "IgM",
+      "IgA",
+      "IgE",
+      "IgD"
+    ],
+    answer: 1,
+    explanation: "IgM é a PRIMEIRA a surgir na resposta primária (pentâmero, ótima ativadora do complemento) → marca infecção RECENTE. IgG predomina na resposta secundária/memória e atravessa a placenta. IgA protege mucosas. IgE liga-se a mastócitos (alergia/parasitas). IgD é receptor de linfócito B naive.",
+    tags: ["IgM", "IgG", "sorologia"]
+  },
+  {
+    id: "mad14", discipline: "mad", phase: "N1", topic: "Perfis de linfócitos T CD4", difficulty: 3,
+    vignette: "A diferenciação do linfócito T CD4 (helper) direciona o tipo de resposta imune.",
+    question: "Qual associação perfil Th × citocina × alvo está CORRETA?",
+    options: [
+      "Th1 — IL-4 — combate helmintos e estimula IgE",
+      "Th1 — IFN-γ — ativa macrófagos contra patógenos intracelulares",
+      "Th2 — IFN-γ — imunidade celular contra vírus",
+      "Th17 — IL-10 — imunossupressão",
+      "Treg — IL-17 — inflamação neutrofílica"
+    ],
+    answer: 1,
+    explanation: "Th1 secreta IFN-γ e ativa MACRÓFAGOS (imunidade celular, patógenos intracelulares, granulomas). Th2 secreta IL-4/IL-5/IL-13 (helmintos, IgE, alergia, eosinófilos). Th17 secreta IL-17 (neutrófilos, fungos, autoimunidade). Treg secreta IL-10/TGF-β (tolerância/supressão). Trocar as citocinas é a pegadinha clássica.",
+    tags: ["Th1", "Th2", "Th17"]
+  },
+  {
+    id: "mad15", discipline: "mad", phase: "N1", topic: "Restrição pelo MHC", difficulty: 3,
+    vignette: "Um vírus infecta uma célula do epitélio respiratório e produz proteínas virais no citoplasma.",
+    question: "Como esses antígenos virais são apresentados e a qual linfócito?",
+    options: [
+      "Via MHC classe II para linfócitos T CD4",
+      "Via MHC classe I para linfócitos T CD8 citotóxicos",
+      "Diretamente por anticorpos de superfície",
+      "Via MHC classe II para linfócitos T CD8",
+      "Não há apresentação; a célula é lisada por neutrófilos"
+    ],
+    answer: 1,
+    explanation: "Antígenos ENDÓGENOS (virais sintetizados no citoplasma) são processados no proteassoma e apresentados via MHC classe I a linfócitos T CD8 CITOTÓXICOS, que matam a célula infectada. MHC classe II apresenta antígenos EXÓGENOS (fagocitados) a CD4. Regra: 'CD8 vê classe I (endógeno); CD4 vê classe II (exógeno)'.",
+    tags: ["MHC I", "CD8", "apresentação"]
+  },
+  {
+    id: "mad16", discipline: "mad", phase: "N1", topic: "GVHD", difficulty: 2,
+    vignette: "Paciente submetido a transplante de medula óssea (células-tronco hematopoéticas) desenvolve, semanas depois, rash cutâneo, diarreia e icterícia.",
+    question: "A complicação e seu mecanismo são:",
+    options: [
+      "Rejeição do enxerto pelo hospedeiro; linfócitos T do receptor atacam o enxerto",
+      "Doença do enxerto contra o hospedeiro (GVHD); linfócitos T do DOADOR atacam tecidos do receptor",
+      "Reação hiperaguda por anticorpos pré-formados",
+      "Anafilaxia ao meio de infusão",
+      "Recidiva da doença de base"
+    ],
+    answer: 1,
+    explanation: "No transplante de medula, o enxerto contém linfócitos T do DOADOR que reconhecem os tecidos do receptor como estranhos → GVHD, com acometimento clássico de PELE, INTESTINO e FÍGADO (rash, diarreia, icterícia). É o oposto da rejeição (em que o hospedeiro ataca o enxerto). Prevenção: imunossupressão e compatibilidade HLA.",
+    tags: ["GVHD", "medula óssea", "doador"]
+  },
+  {
+    id: "mad17", discipline: "mad", phase: "N2", topic: "Hipersensibilidade tipo II", difficulty: 3,
+    vignette: "Paciente recebe transfusão ABO incompatível e desenvolve febre, dor lombar e hemoglobinúria; ou, em outro caso, apresenta anemia hemolítica autoimune com Coombs direto positivo.",
+    question: "O mecanismo de hipersensibilidade envolvido é:",
+    options: [
+      "Tipo I — IgE e mastócitos",
+      "Tipo II — anticorpos IgG/IgM contra antígenos da superfície celular, com lise via complemento/opsonização",
+      "Tipo III — deposição de imunocomplexos circulantes",
+      "Tipo IV — linfócitos T e macrófagos",
+      "Reação não imunológica"
+    ],
+    answer: 1,
+    explanation: "Reação transfusional hemolítica e anemia hemolítica autoimune são hipersensibilidade TIPO II (CITOTÓXICA): anticorpos IgG/IgM ligam-se a antígenos da MEMBRANA das hemácias → ativação do complemento e opsonização → hemólise. O teste de Coombs detecta esses anticorpos. Tipo III é por imunocomplexos (não ligados à superfície celular).",
+    tags: ["tipo II", "Coombs", "hemólise"]
+  },
+  {
+    id: "mad18", discipline: "mad", phase: "N2", topic: "Hipersensibilidade tipo III", difficulty: 3,
+    vignette: "Dias após receber soro heterólogo (antiveneno), paciente evolui com febre, urticária, artralgia e proteinúria.",
+    question: "O quadro (doença do soro) corresponde a qual mecanismo?",
+    options: [
+      "Tipo I imediata",
+      "Tipo III — deposição de imunocomplexos com ativação do complemento em tecidos (vasos, rins, articulações)",
+      "Tipo II citotóxica",
+      "Tipo IV tardia",
+      "Autoimunidade órgão-específica"
+    ],
+    answer: 1,
+    explanation: "A doença do soro é hipersensibilidade TIPO III: imunocomplexos (antígeno-anticorpo) circulam e se DEPOSITAM em vasos, glomérulos e articulações, ativando complemento e recrutando neutrófilos → vasculite, nefrite, artrite. Ocorre dias após a exposição. Difere da tipo II (anticorpo contra antígeno fixo na célula) e da tipo I (imediata, IgE).",
+    tags: ["tipo III", "imunocomplexos", "doença do soro"]
+  },
+  {
+    id: "mad19", discipline: "mad", phase: "N2", topic: "Hipersensibilidade tipo IV", difficulty: 2,
+    vignette: "48–72 horas após a aplicação do PPD (teste tuberculínico) ou do contato com níquel de um brinco, surge enduração/eritema local.",
+    question: "Esse padrão TARDIO é mediado por:",
+    options: [
+      "IgE e histamina",
+      "Linfócitos T sensibilizados e macrófagos (imunidade celular), sem anticorpos",
+      "Imunocomplexos circulantes",
+      "Anticorpos citotóxicos e complemento",
+      "Degranulação de eosinófilos"
+    ],
+    answer: 1,
+    explanation: "Hipersensibilidade TIPO IV (TARDIA) é mediada por LINFÓCITOS T (Th1/CD8) e MACRÓFAGOS, não por anticorpos. Pico em 48–72 h (por isso a leitura do PPD é tardia). Exemplos: dermatite de contato (níquel), PPD, rejeição celular, granulomas. É a única hipersensibilidade CELULAR (as outras são humorais).",
+    tags: ["tipo IV", "PPD", "dermatite de contato"]
+  },
+  {
+    id: "mad20", discipline: "mad", phase: "N2", topic: "Autoimunidade órgão-específica", difficulty: 3,
+    vignette: "Mulher com ptose e fraqueza muscular que piora ao longo do dia e com esforço, melhorando ao repouso. Anticorpos anti-receptor de acetilcolina positivos.",
+    question: "O diagnóstico e o mecanismo são:",
+    options: [
+      "Esclerose múltipla; anticorpos contra a mielina do SNC",
+      "Miastenia gravis; anticorpos que bloqueiam/destroem o receptor de acetilcolina na junção neuromuscular",
+      "Doença de Graves; anticorpos estimuladores do receptor de TSH",
+      "Guillain-Barré; desmielinização periférica pós-infecciosa",
+      "Polimiosite; infiltrado inflamatório muscular"
+    ],
+    answer: 1,
+    explanation: "Fraqueza FATIGÁVEL (piora com uso, melhora com repouso) + anti-AChR = MIASTENIA GRAVIS, hipersensibilidade tipo II em que anticorpos bloqueiam e degradam o receptor de acetilcolina na placa motora → falha na transmissão neuromuscular. Graves também é por anticorpo anti-receptor, mas ESTIMULADOR (do TSH) → hipertireoidismo. Associação com timoma.",
+    tags: ["miastenia", "anti-AChR", "junção neuromuscular"]
+  },
+  {
+    id: "mad21", discipline: "mad", phase: "N2", topic: "Asma alérgica", difficulty: 3,
+    vignette: "Adolescente atópico com crises de sibilância, dispneia e tosse desencadeadas por poeira, com boa resposta a broncodilatador.",
+    question: "Sobre a fisiopatologia imunológica da asma alérgica, assinale a correta:",
+    options: [
+      "Resposta Th1 com IFN-γ e ativação de macrófagos",
+      "Resposta Th2 com IL-4/IL-5/IL-13, IgE, eosinófilos e inflamação brônquica com hiper-reatividade",
+      "Deposição de imunocomplexos na parede brônquica",
+      "Reação citotóxica contra o epitélio respiratório",
+      "Deficiência de complemento com infecções de repetição"
+    ],
+    answer: 1,
+    explanation: "A asma alérgica é doença Th2: IL-4/IL-13 (troca para IgE), IL-5 (eosinófilos). A reexposição ao alérgeno degranula mastócitos (fase imediata) e recruta eosinófilos (fase tardia) → broncoconstrição, edema, hipersecreção e HIPER-REATIVIDADE brônquica. Base do tratamento: corticoide inalatório (anti-inflamatório) + broncodilatador.",
+    tags: ["asma", "Th2", "eosinófilo"]
+  },
+  {
+    id: "mad22", discipline: "mad", phase: "N2", topic: "Imunoensaios — método", difficulty: 2,
+    vignette: "Um laboratório quer quantificar a concentração de uma citocina no soro com alta sensibilidade.",
+    question: "Qual técnica é a mais apropriada e qual seu princípio?",
+    options: [
+      "Western blot; separa proteínas por peso e confirma identidade",
+      "ELISA sanduíche; captura o antígeno entre dois anticorpos e gera sinal proporcional à concentração",
+      "Citometria de fluxo; conta células em suspensão marcadas",
+      "PCR; amplifica sequências de DNA",
+      "Imuno-histoquímica; marca antígenos em cortes de tecido"
+    ],
+    answer: 1,
+    explanation: "O ELISA sanduíche é ideal para QUANTIFICAR antígenos solúveis (ex.: citocinas): um anticorpo de captura fixa o antígeno, um segundo anticorpo conjugado a enzima gera cor proporcional à concentração. Western blot confirma identidade por peso molecular (ex.: confirmatório de HIV). Citometria analisa células; imuno-histoquímica, tecidos.",
+    tags: ["ELISA", "quantificação", "citocina"]
+  },
+
   /* ---------------- Prática Clínica II ---------------- */
   {
     id: "pat01", discipline: "pratica", phase: "N1", topic: "Patologia do esôfago", difficulty: 3,
@@ -309,6 +490,187 @@ const QUESTIONS = [
     answer: 1,
     explanation: "DM1 = destruição AUTOIMUNE das células beta (insulite, autoanticorpos anti-GAD, anti-ilhota) → deficiência ABSOLUTA de insulina, tendência à cetoacidose. DM2 = resistência à insulina + disfunção beta progressiva, com depósito de amiloide (amilina) nas ilhotas e associação à obesidade. Diferenciar os mecanismos é essencial.",
     tags: ["DM1", "autoimune", "ilhotas"]
+  },
+
+  {
+    id: "pat10", discipline: "pratica", phase: "N1", topic: "Adenocarcinoma gástrico", difficulty: 3,
+    vignette: "Biópsia gástrica revela células em 'anel de sinete' infiltrando difusamente a parede, com espessamento rígido (linite plástica).",
+    question: "Sobre esse subtipo (difuso) de adenocarcinoma gástrico, é correto:",
+    options: [
+      "É o subtipo intestinal, associado a H. pylori e à cascata de Correa, bom prognóstico",
+      "É o subtipo difuso, com células em anel de sinete, pior prognóstico e associação a mutação de CDH1 (E-caderina)",
+      "É sempre benigno",
+      "Origina-se de metaplasia escamosa",
+      "Não invade a parede gástrica"
+    ],
+    answer: 1,
+    explanation: "Células em anel de sinete + linite plástica = adenocarcinoma gástrico tipo DIFUSO (classificação de Lauren): perda de E-caderina (CDH1), pouca coesão, infiltração difusa, PIOR prognóstico, acomete mais jovens. O tipo INTESTINAL forma glândulas, associa-se a H. pylori/dieta/cascata de Correa e a lesões pré-malignas. Diferenciar os dois é cobrado.",
+    tags: ["anel de sinete", "linite plástica", "Lauren"]
+  },
+  {
+    id: "pat11", discipline: "pratica", phase: "N1", topic: "Doença celíaca", difficulty: 2,
+    vignette: "Paciente com diarreia crônica, distensão e anemia ferropriva. Biópsia duodenal: atrofia de vilosidades, hiperplasia de criptas e linfocitose intraepitelial. Anti-transglutaminase positivo.",
+    question: "O diagnóstico e o mecanismo são:",
+    options: [
+      "Doença de Whipple; infecção por Tropheryma whipplei",
+      "Doença celíaca; reação imunomediada ao glúten em predispostos (HLA-DQ2/DQ8)",
+      "Giardíase; parasitose intestinal",
+      "Intolerância à lactose; deficiência de lactase",
+      "Doença de Crohn duodenal"
+    ],
+    answer: 1,
+    explanation: "Atrofia vilositária + hiperplasia de criptas + linfocitose intraepitelial + anti-transglutaminase = DOENÇA CELÍACA, resposta imune ao glúten (gliadina) em indivíduos HLA-DQ2/DQ8, com má absorção (anemia, diarreia). Tratamento: dieta sem glúten. A atrofia das vilosidades reduz a superfície absortiva — base da má absorção.",
+    tags: ["celíaca", "atrofia vilositária", "HLA-DQ2"]
+  },
+  {
+    id: "pat12", discipline: "pratica", phase: "N1", topic: "Sequência adenoma-carcinoma", difficulty: 3,
+    vignette: "Colonoscopia de rastreamento identifica pólipo adenomatoso viloso de 2 cm no cólon.",
+    question: "Qual a importância desse achado e a base molecular?",
+    options: [
+      "Pólipo hiperplásico sem risco, apenas observar",
+      "Adenoma é lesão precursora do adenocarcinoma colorretal (sequência adenoma-carcinoma), com acúmulo de mutações (APC → KRAS → TP53)",
+      "Indica doença de Crohn",
+      "É metástase de outro sítio",
+      "Pólipos vilosos têm menor risco que os tubulares"
+    ],
+    answer: 1,
+    explanation: "O adenoma (sobretudo VILOSO e >1 cm) é o precursor do adenocarcinoma colorretal — a sequência ADENOMA-CARCINOMA acumula mutações (inativação de APC, ativação de KRAS, perda de TP53). Pólipos vilosos e maiores têm MAIOR risco de malignizar que os tubulares pequenos. Por isso a colonoscopia com polipectomia previne câncer.",
+    tags: ["adenoma", "APC", "colorretal"]
+  },
+  {
+    id: "pat13", discipline: "pratica", phase: "N1", topic: "Apendicite aguda", difficulty: 2,
+    vignette: "Jovem com dor periumbilical que migra para a fossa ilíaca direita, anorexia, febre baixa e Blumberg positivo.",
+    question: "O mecanismo fisiopatológico inicial mais comum é:",
+    options: [
+      "Isquemia mesentérica por embolia",
+      "Obstrução da luz apendicular (fecalito/hiperplasia linfoide) → distensão, proliferação bacteriana e inflamação",
+      "Perfuração espontânea sem obstrução",
+      "Torção do apêndice",
+      "Refluxo de conteúdo colônico"
+    ],
+    answer: 1,
+    explanation: "A apendicite começa pela OBSTRUÇÃO da luz (fecalito no adulto, hiperplasia linfoide no jovem) → acúmulo de secreção, aumento de pressão, proliferação bacteriana, isquemia da parede e inflamação transmural → pode evoluir para necrose e perfuração. A dor migra (visceral periumbilical → somática em FID quando irrita o peritônio parietal).",
+    tags: ["apendicite", "fecalito", "Blumberg"]
+  },
+  {
+    id: "pat14", discipline: "pratica", phase: "N2", topic: "Cirrose — complicações", difficulty: 3,
+    vignette: "Cirrótico com ascite volumosa, circulação colateral abdominal e episódio de hematêmese.",
+    question: "A hemorragia digestiva alta nesse contexto deve-se principalmente a:",
+    options: [
+      "Úlcera duodenal por H. pylori",
+      "Varizes esofágicas rotas, decorrentes da hipertensão portal",
+      "Câncer gástrico avançado",
+      "Síndrome de Mallory-Weiss por vômitos",
+      "Angiodisplasia do cólon"
+    ],
+    answer: 1,
+    explanation: "Na cirrose, a fibrose aumenta a resistência ao fluxo portal → HIPERTENSÃO PORTAL → abre colaterais portossistêmicas (varizes esofagogástricas, circulação abdominal 'cabeça de medusa', hemorroidas) e ascite. A rotura de VARIZES ESOFÁGICAS é a causa clássica de hematêmese maciça no cirrótico. Outras complicações: PBE, encefalopatia, síndrome hepatorrenal.",
+    tags: ["hipertensão portal", "varizes", "cirrose"]
+  },
+  {
+    id: "pat15", discipline: "pratica", phase: "N2", topic: "Câncer de pâncreas", difficulty: 3,
+    vignette: "Homem de 65 anos, tabagista, com icterícia progressiva INDOLOR, colúria, acolia e vesícula biliar palpável e indolor.",
+    question: "O achado da vesícula palpável indolor (sinal de Courvoisier) sugere:",
+    options: [
+      "Colelitíase simples",
+      "Obstrução maligna da via biliar distal, tipicamente por adenocarcinoma de cabeça de pâncreas",
+      "Colecistite aguda litiásica",
+      "Hepatite viral aguda",
+      "Síndrome de Gilbert"
+    ],
+    answer: 1,
+    explanation: "Icterícia obstrutiva INDOLOR + vesícula palpável indolor = sinal de COURVOISIER, que sugere obstrução MALIGNA da via biliar (adenocarcinoma de cabeça de pâncreas ou colangiocarcinoma distal), não litíase — na litíase crônica a vesícula é fibrótica e não distende. Tabagismo é fator de risco. Prognóstico ruim, diagnóstico tardio.",
+    tags: ["Courvoisier", "pâncreas", "icterícia indolor"]
+  },
+  {
+    id: "pat16", discipline: "pratica", phase: "N2", topic: "Carcinoma de tireoide", difficulty: 2,
+    vignette: "Nódulo tireoidiano em mulher jovem; punção mostra células com núcleos em 'vidro fosco', fendas nucleares e corpos de psammoma.",
+    question: "O tipo histológico e o prognóstico são:",
+    options: [
+      "Carcinoma anaplásico; péssimo prognóstico",
+      "Carcinoma papilífero; o mais comum, dissemina por via linfática, bom prognóstico",
+      "Carcinoma medular; produz calcitonina",
+      "Carcinoma folicular; dissemina por via hematogênica",
+      "Linfoma de tireoide"
+    ],
+    answer: 1,
+    explanation: "Núcleos em vidro fosco, fendas ('grooves'), pseudoinclusões e CORPOS DE PSAMMOMA = carcinoma PAPILÍFERO, o mais comum da tireoide, de disseminação LINFÁTICA e BOM prognóstico. O folicular dissemina por via hematogênica; o medular (células C) produz calcitonina; o anaplásico é agressivo e letal. Reconhecer a histologia é a chave.",
+    tags: ["papilífero", "psammoma", "tireoide"]
+  },
+  {
+    id: "pat17", discipline: "pratica", phase: "N2", topic: "Feocromocitoma", difficulty: 3,
+    vignette: "Paciente com crises de cefaleia, palpitação, sudorese e hipertensão paroxística. Metanefrinas urinárias elevadas.",
+    question: "O diagnóstico e a origem são:",
+    options: [
+      "Hiperaldosteronismo; zona glomerulosa da adrenal",
+      "Feocromocitoma; tumor da medula adrenal produtor de catecolaminas",
+      "Síndrome de Cushing; zona fasciculada",
+      "Doença de Addison; córtex adrenal",
+      "Adenoma hipofisário produtor de ACTH"
+    ],
+    answer: 1,
+    explanation: "Tríade cefaleia + palpitação + sudorese com HAS paroxística e metanefrinas elevadas = FEOCROMOCITOMA, tumor da MEDULA adrenal (células cromafins) que secreta catecolaminas (adrenalina/noradrenalina). Segue a 'regra dos 10' (10% bilateral, extra-adrenal, maligno). Cuidado: manipular o tumor sem bloqueio alfa pode causar crise hipertensiva.",
+    tags: ["feocromocitoma", "catecolaminas", "medula adrenal"]
+  },
+  {
+    id: "pat18", discipline: "pratica", phase: "N2", topic: "AVC — patologia", difficulty: 3,
+    vignette: "Homem de 70 anos, hipertenso, com déficit neurológico focal súbito. TC de crânio sem contraste inicial é normal; após 24 h mostra área hipodensa.",
+    question: "O tipo mais provável de AVC e o motivo da TC inicial normal são:",
+    options: [
+      "AVC hemorrágico; sangue é hipodenso na TC",
+      "AVC isquêmico; a TC precoce costuma ser normal, pois a hipodensidade da necrose leva horas para aparecer",
+      "AVC hemorrágico; a hipodensidade aparece imediatamente",
+      "Tumor cerebral; cresce em 24 h",
+      "Enxaqueca com aura"
+    ],
+    answer: 1,
+    explanation: "Déficit focal súbito com TC inicial NORMAL sugere AVC ISQUÊMICO: a hipodensidade (edema citotóxico da necrose) demora horas a aparecer, por isso a TC precoce pode ser normal (serve para EXCLUIR hemorragia, que é HIPERdensa imediatamente). O AVC isquêmico é o mais comum (~85%). A janela para trombólise depende desse raciocínio tempo-imagem.",
+    tags: ["AVC isquêmico", "TC", "penumbra"]
+  },
+  {
+    id: "pat19", discipline: "pratica", phase: "N2", topic: "Doença hepática — hepatites virais", difficulty: 2,
+    vignette: "Comparação entre as hepatites virais quanto à cronicidade.",
+    question: "Qual afirmação está CORRETA?",
+    options: [
+      "Hepatite A cronifica na maioria dos casos",
+      "Hepatites B e C podem cronificar e predispor a cirrose e carcinoma hepatocelular; a A e a E (imunocompetente) são geralmente autolimitadas",
+      "Hepatite C nunca cronifica",
+      "Somente a hepatite A causa carcinoma hepatocelular",
+      "Nenhuma hepatite viral evolui para cirrose"
+    ],
+    answer: 1,
+    explanation: "As hepatites de transmissão parenteral/sexual B e C CRONIFICAM (C em ~80%) e são grandes causas de cirrose e CHC. As de transmissão fecal-oral A e E são geralmente AGUDAS e autolimitadas (E pode ser grave em gestantes; cronifica só em imunossuprimidos). Relacionar via de transmissão e risco de cronicidade é essencial.",
+    tags: ["hepatite", "cronificação", "CHC"]
+  },
+  {
+    id: "sem01", discipline: "pratica", phase: "N2", topic: "Semiologia — ascite", difficulty: 2,
+    vignette: "Ao exame do abdome de um paciente cirrótico, você quer confirmar ascite de médio volume.",
+    question: "Qual manobra semiológica é típica para detectar líquido livre na cavidade?",
+    options: [
+      "Sinal de Murphy",
+      "Macicez móvel (piparote e mudança de decúbito alterando a percussão)",
+      "Sinal de Blumberg",
+      "Sinal de Giordano",
+      "Manobra de Lasègue"
+    ],
+    answer: 1,
+    explanation: "A ascite é pesquisada pela MACICEZ MÓVEL (o líquido se desloca com a mudança de decúbito, alterando a linha de percussão) e pelo sinal do PIPAROTE (onda líquida). Murphy → colecistite; Blumberg → irritação peritoneal (apendicite); Giordano → pielonefrite; Lasègue → ciática. Cada manobra aponta um sistema — não confundir.",
+    tags: ["ascite", "macicez móvel", "piparote"]
+  },
+  {
+    id: "sem02", discipline: "pratica", phase: "N2", topic: "Semiologia — hipertireoidismo", difficulty: 2,
+    vignette: "Paciente com perda de peso apesar de apetite aumentado, taquicardia, tremor fino, intolerância ao calor e exoftalmia.",
+    question: "Esse conjunto de sinais indica e sugere qual etiologia?",
+    options: [
+      "Hipotireoidismo por Hashimoto",
+      "Hipertireoidismo, e a exoftalmia sugere doença de Graves",
+      "Insuficiência adrenal",
+      "Feocromocitoma isolado",
+      "Diabetes insipidus"
+    ],
+    answer: 1,
+    explanation: "Perda ponderal com apetite preservado, taquicardia, tremor, intolerância ao calor = HIPERtireoidismo (metabolismo acelerado). A EXOFTALMIA (oftalmopatia) e o bócio difuso apontam especificamente para DOENÇA DE GRAVES (autoimune, anti-TRAB). No hipotireoidismo ocorre o oposto: ganho de peso, bradicardia, intolerância ao frio.",
+    tags: ["hipertireoidismo", "Graves", "exoftalmia"]
   },
 
   /* ---------------- Terapêutica I — Farmacocinética ---------------- */
@@ -641,6 +1003,21 @@ const FLASHCARDS = [
   { id: "f-mad12", discipline: "mad", phase: "N2", front: "Vasculites associadas a ANCA", back: "ANCA-c/PR3: Granulomatose com poliangiite (Wegener). ANCA-p/MPO: poliangiite microscópica e Churg-Strauss (EGPA)." },
   { id: "f-mad13", discipline: "mad", phase: "N2", front: "Sensibilidade vs especificidade (uso clínico)", back: "Sensível → bom para RASTREIO (SnNout: negativo exclui). Específico → bom para CONFIRMAR (SpPin: positivo confirma)." },
   { id: "f-mad14", discipline: "mad", phase: "N2", front: "Exaustão de linfócitos T e checkpoints", back: "T exaustos expressam PD-1, CTLA-4. Tumores usam PD-L1 para 'desligar' T. Imunoterapia (anti-PD1/anti-CTLA4) retira o freio." },
+  { id: "f-mad15", discipline: "mad", phase: "N1", front: "Perfis Th (CD4) e suas citocinas", back: "Th1: IFN-γ (macrófagos, intracelulares). Th2: IL-4/5/13 (IgE, eosinófilos, helmintos/alergia). Th17: IL-17 (neutrófilos, fungos, autoimunidade). Treg: IL-10/TGF-β (tolerância)." },
+  { id: "f-mad16", discipline: "mad", phase: "N1", front: "MHC I vs II — regra de apresentação", back: "MHC I (todas as células): antígeno ENDÓGENO → CD8 citotóxico. MHC II (APCs): antígeno EXÓGENO → CD4 helper. 'CD8×I, CD4×II'." },
+  { id: "f-mad17", discipline: "mad", phase: "N1", front: "Complemento — funções por fragmento", back: "C3b: opsonização. C3a/C5a: anafilotoxinas (C5a = quimiotaxia). C5b-C9: MAC (lise). Deficiência C5-C9 → Neisseria." },
+  { id: "f-mad18", discipline: "mad", phase: "N1", front: "Classes de imunoglobulinas", back: "IgM: 1ª da resposta (aguda), ativa complemento. IgG: memória, cruza placenta. IgA: mucosas. IgE: mastócito (alergia/parasita). IgD: BCR naive." },
+  { id: "f-mad19", discipline: "mad", phase: "N2", front: "Anticorpo anti-receptor: Graves vs Miastenia", back: "Graves: anti-TRAB ESTIMULA o receptor de TSH → hipertireoidismo. Miastenia: anti-AChR BLOQUEIA/destrói o receptor de acetilcolina → fraqueza fatigável." },
+  { id: "f-mad20", discipline: "mad", phase: "N2", front: "Doença do soro (tipo III) — pista", back: "Dias após antígeno (soro/fármaco): febre, urticária, artralgia, proteinúria. Imunocomplexos depositam em vasos/rim/articulação + complemento." },
+
+  { id: "f-pat10", discipline: "pratica", phase: "N1", front: "Adenocarcinoma gástrico: intestinal vs difuso (Lauren)", back: "Intestinal: forma glândulas, H. pylori/Correa, melhor prognóstico. Difuso: anel de sinete, linite plástica, perda de E-caderina (CDH1), pior prognóstico." },
+  { id: "f-pat11", discipline: "pratica", phase: "N1", front: "Doença celíaca — histologia e sorologia", back: "Atrofia de vilosidades + hiperplasia de criptas + linfocitose intraepitelial. Anti-transglutaminase/antiendomísio. HLA-DQ2/DQ8. Trata com dieta sem glúten." },
+  { id: "f-pat12", discipline: "pratica", phase: "N1", front: "Sequência adenoma-carcinoma (cólon)", back: "Adenoma (viloso, >1 cm = mais risco) → carcinoma. Mutações: APC → KRAS → TP53. Polipectomia previne o câncer colorretal." },
+  { id: "f-pat13", discipline: "pratica", phase: "N2", front: "Sinal de Courvoisier", back: "Vesícula palpável e INDOLOR + icterícia obstrutiva = obstrução maligna da via biliar distal (ex.: câncer de cabeça de pâncreas), não litíase." },
+  { id: "f-pat14", discipline: "pratica", phase: "N2", front: "Complicações da hipertensão portal", back: "Varizes esofagogástricas (hematêmese), ascite, circulação colateral (cabeça de medusa), esplenomegalia, PBE, encefalopatia, síndrome hepatorrenal." },
+  { id: "f-pat15", discipline: "pratica", phase: "N2", front: "Carcinomas da tireoide", back: "Papilífero: mais comum, psammoma/vidro fosco, linfático, bom prognóstico. Folicular: hematogênico. Medular: calcitonina (células C). Anaplásico: letal." },
+  { id: "f-pat16", discipline: "pratica", phase: "N2", front: "AVC isquêmico vs hemorrágico na TC", back: "Isquêmico (~85%): TC precoce normal, hipodensidade em horas. Hemorrágico: HIPERdenso imediato. TC inicial serve p/ excluir sangramento antes de trombólise." },
+  { id: "f-sem01", discipline: "pratica", phase: "N2", front: "Manobras semiológicas × sistema", back: "Murphy: colecistite. Blumberg: peritônio (apendicite). Giordano: rim (pielonefrite). Macicez móvel/piparote: ascite." },
 
   /* Prática Clínica */
   { id: "f-pat01", discipline: "pratica", phase: "N1", front: "Cascata de Correa (câncer gástrico)", back: "Gastrite crônica (H. pylori) → atrofia → metaplasia intestinal → displasia → adenocarcinoma." },

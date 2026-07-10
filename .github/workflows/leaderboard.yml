@@ -1,0 +1,75 @@
+name: Atualizar ranking
+
+# Quando alguém abre uma issue com título começando em "score",
+# este workflow lê a pontuação, atualiza leaderboard.json e fecha a issue.
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  update:
+    if: startsWith(github.event.issue.title, 'score')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const { owner, repo } = context.repo;
+            const path = "leaderboard.json";
+
+            async function reply(msg, close) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body: msg });
+              if (close) await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: "closed" });
+            }
+
+            // 1) Extrai o payload (MQDATA:<base64>)
+            const m = (issue.body || "").match(/MQDATA:([A-Za-z0-9+/=\s]+)/);
+            if (!m) { await reply("❌ Não encontrei os dados da pontuação (MQDATA). Envie pelo botão do app.", true); return; }
+            let data;
+            try {
+              data = JSON.parse(Buffer.from(m[1].replace(/\s/g, ""), "base64").toString("utf8"));
+            } catch (e) { await reply("❌ Não consegui ler os dados. Reenvie pelo app.", true); return; }
+
+            const id = String(data.id || "").slice(0, 64);
+            if (!id) { await reply("❌ Registro sem ID de jogador.", true); return; }
+
+            const rec = {
+              name:     String(data.name || "Jogador").slice(0, 40),
+              turma:    String(data.turma || "").slice(0, 60),
+              xp:       Math.max(0, parseInt(data.xp) || 0),
+              level:    Math.max(1, parseInt(data.level) || 1),
+              streak:   Math.max(0, parseInt(data.streak) || 0),
+              answered: Math.max(0, parseInt(data.answered) || 0),
+              accuracy: Math.min(100, Math.max(0, parseInt(data.accuracy) || 0)),
+              updated:  new Date().toISOString()
+            };
+
+            // 2) Lê + atualiza + grava (com retry em caso de conflito de sha)
+            for (let attempt = 0; attempt < 4; attempt++) {
+              let sha = undefined, json = { players: {} };
+              try {
+                const cur = await github.rest.repos.getContent({ owner, repo, path });
+                sha = cur.data.sha;
+                json = JSON.parse(Buffer.from(cur.data.content, "base64").toString("utf8"));
+                if (!json.players) json.players = {};
+              } catch (e) { /* arquivo ainda não existe */ }
+
+              json.players[id] = rec;
+              const content = Buffer.from(JSON.stringify(json, null, 2) + "\n").toString("base64");
+              try {
+                await github.rest.repos.createOrUpdateFileContents({
+                  owner, repo, path, sha, content,
+                  message: `ranking: ${rec.name} — ${rec.xp} XP (Nv ${rec.level})`
+                });
+                await reply(`✅ Pontuação registrada: **${rec.name}** — ${rec.xp} XP (Nível ${rec.level}, 🔥${rec.streak}). Você já está no ranking! Abra o app e toque em "Atualizar ranking".`, true);
+                return;
+              } catch (e) {
+                if (e.status === 409 && attempt < 3) { await new Promise(r => setTimeout(r, 1500)); continue; }
+                throw e;
+              }
+            }
