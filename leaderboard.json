@@ -1,3 +1,14 @@
 {
-  "players": {}
+  "players": {
+    "p_teste123": {
+      "name": "Teste Bot",
+      "turma": "Mandic 5º sem",
+      "xp": 250,
+      "level": 3,
+      "streak": 4,
+      "answered": 30,
+      "accuracy": 83,
+      "updated": "2026-07-10T21:57:48.581Z"
+    }
+  }
 }
