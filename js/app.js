@@ -5,7 +5,7 @@
    ============================================================ */
 (function(){
 "use strict";
-const { DISCIPLINES, QUESTIONS, FLASHCARDS } = window.MEDQUEST_DATA;
+const { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES } = window.MEDQUEST_DATA;
 const CFG = window.MEDQUEST_CONFIG;
 const LS_KEY = "medquest5_state_v1";
 
@@ -53,6 +53,7 @@ function freshState(){
     profile:{ id:"p_"+Math.abs(hash(String(navigator.userAgent+performance.now()+"x"))).toString(36), name:"", turma:CFG.TURMA },
     xp:0,
     stats:{answered:0, correct:0, reviews:0},
+    studied:{},                   // {"disc::topic": true} — temas marcados como estudados
     byDisc:{},                    // {disc:{answered,correct}}
     seenQ:{},                     // {qid: {correct:bool, count}}
     srs:{},                       // {cardId:{ef,interval,reps,due}}
@@ -108,6 +109,29 @@ function discProgress(disc){
   const done=Object.keys(S.seenQ).filter(id=>{const q=QUESTIONS.find(x=>x.id===id);return q&&q.discipline===disc&&S.seenQ[id].correct;}).length;
   return {done, total, pct: total? Math.round(done/total*100):0};
 }
+
+/* ---------- Plano de estudos / travamento por tema ---------- */
+function tkey(disc,topic){ return disc+"::"+topic; }
+function isStudied(disc,topic){ return !!S.studied[tkey(disc,topic)]; }
+// Lista ordenada de temas de uma disciplina (plano + temas de questões sem plano)
+function planTopics(disc){
+  const seen=new Set(), out=[];
+  (SYLLABUS[disc]||[]).forEach(t=>{ const k=tkey(disc,t.topic); if(!seen.has(k)){ seen.add(k); out.push({phase:t.phase, topic:t.topic}); } });
+  QUESTIONS.filter(q=>q.discipline===disc).forEach(q=>{ const k=tkey(disc,q.topic); if(!seen.has(k)){ seen.add(k); out.push({phase:q.phase, topic:q.topic}); } });
+  return out.map(t=>({ ...t, key:tkey(disc,t.topic),
+    qCount: QUESTIONS.filter(q=>q.discipline===disc&&q.topic===t.topic).length,
+    studied: isStudied(disc,t.topic) }));
+}
+// Questões liberadas (somente de temas estudados)
+function unlockedQuestions(disc){
+  return QUESTIONS.filter(q=>(!disc||q.discipline===disc) && isStudied(q.discipline,q.topic));
+}
+function studiedCount(){
+  let s=0,t=0;
+  for(const d in DISCIPLINES){ planTopics(d).forEach(x=>{ t++; if(x.studied) s++; }); }
+  return {studied:s, total:t};
+}
+function setStudied(disc,topic,val){ const k=tkey(disc,topic); if(val) S.studied[k]=true; else delete S.studied[k]; save(); }
 
 /* ---------- Missões diárias ---------- */
 function ensureMissions(){
@@ -262,8 +286,10 @@ function render(){
   renderTopbar();
   const main=$("#main"); main.innerHTML="";
   if(route==="home") viewHome(main);
+  else if(route==="plan") viewPlan(main);
   else if(route==="quiz") viewQuiz(main);
   else if(route==="flash") viewFlash(main);
+  else if(route==="summaries") viewSummaries(main);
   else if(route==="rank") viewRank(main);
   else if(route==="badges") viewBadges(main);
   renderNav();
@@ -282,7 +308,7 @@ function renderTopbar(){
 }
 
 function renderNav(){
-  const items=[["home","🏠","Início"],["quiz","❓","Questões"],["flash","🃏","Flashcards"],["rank","🏆","Ranking"],["badges","🎖️","Conquistas"]];
+  const items=[["home","🏠","Início"],["plan","📋","Plano"],["quiz","❓","Questões"],["flash","🃏","Flashcards"],["summaries","📖","Resumos"],["rank","🏆","Ranking"],["badges","🎖️","Conquistas"]];
   const nav=$("#nav"); nav.innerHTML="";
   items.forEach(([r,ic,lb])=>{
     const b=el("button",route===r?"active":"",`<span class="ic">${ic}</span><span>${lb}</span>`);
@@ -303,6 +329,17 @@ function viewHome(m){
     tile("🎖️",S.badges.length+"/"+BADGES.length,"conquistas"),
   );
   m.appendChild(tiles);
+
+  // Aviso: comece pelo Plano
+  const sc=studiedCount();
+  if(sc.studied===0){
+    const banner=el("div","card mt");
+    banner.style.borderColor="var(--accent)";
+    banner.innerHTML=`<b>👉 Comece pelo Plano de Estudos</b>
+      <p class="muted small mt">As questões só aparecem dos temas que você marcar como estudados. Marque o que já viu para liberar o treino.</p>`;
+    const pb=el("button","btn block mt","📋 Abrir Plano de Estudos"); pb.onclick=()=>go("plan");
+    banner.appendChild(pb); m.appendChild(banner);
+  }
 
   // Missões
   m.appendChild(el("div","sectitle","Missões de hoje"));
@@ -329,22 +366,106 @@ function viewHome(m){
   const grid=el("div","grid cols2");
   for(const key in DISCIPLINES){
     const d=DISCIPLINES[key], p=discProgress(key);
-    const qn=QUESTIONS.filter(q=>q.discipline===key).length;
-    const fn=FLASHCARDS.filter(f=>f.discipline===key).length;
+    const unlocked=unlockedQuestions(key).length;
+    const tp=planTopics(key); const st=tp.filter(t=>t.studied).length;
     const c=el("div","card disc");
+    const locked = unlocked===0;
     c.innerHTML=`<div class="ic">${d.icon}</div><div class="nm">${esc(d.name)}</div>
-      <div class="meta">${qn} questões · ${fn} flashcards · ${p.done}/${p.total} dominadas</div>
+      <div class="meta">${locked?`🔒 marque temas no Plano`:`${unlocked} questões liberadas · ${st}/${tp.length} temas`}</div>
       <div class="prog"><span style="width:${p.pct}%;background:${d.color}"></span></div>`;
-    c.onclick=()=>startQuiz(key, Math.min(qn,12));
+    c.onclick=()=> locked ? go("plan") : startQuiz(key, Math.min(unlocked,12));
     grid.appendChild(c);
   }
   m.appendChild(grid);
 }
 function tile(em,big,lbl){ const t=el("div","tile"); t.innerHTML=`<div class="em">${em}</div><div class="big">${big}</div><div class="lbl">${lbl}</div>`; return t;}
 
+/* ---------- PLANO DE ESTUDOS ---------- */
+function viewPlan(m){
+  const sc=studiedCount();
+  const head=el("div","card");
+  head.innerHTML=`<h3>📋 Plano de Estudos</h3>
+    <p class="muted small">Marque cada tema conforme for estudando. <b>As questões só aparecem dos temas marcados</b> — você treina exatamente o que já viu.</p>
+    <div class="prog" style="margin-top:10px"><span style="width:${sc.total?Math.round(sc.studied/sc.total*100):0}%;background:var(--accent)"></span></div>
+    <div class="muted small mt">${sc.studied}/${sc.total} temas marcados como estudados</div>`;
+  m.appendChild(head);
+
+  for(const disc in DISCIPLINES){
+    const d=DISCIPLINES[disc];
+    const topics=planTopics(disc);
+    const nStudied=topics.filter(t=>t.studied).length;
+    const card=el("div","card mt");
+    const header=el("div"); header.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap";
+    header.innerHTML=`<b>${d.icon} ${esc(d.name)}</b><span class="muted small">${nStudied}/${topics.length}</span>`;
+    card.appendChild(header);
+
+    const allOn = nStudied===topics.length;
+    const toggleAll=el("button","btn ghost sm mt", allOn?"Desmarcar todos":"✓ Marcar toda a disciplina");
+    toggleAll.onclick=()=>{ topics.forEach(t=>setStudied(disc,t.topic,!allOn)); render(); };
+    card.appendChild(toggleAll);
+
+    let curPhase=null;
+    topics.forEach(t=>{
+      if(t.phase!==curPhase){ curPhase=t.phase; card.appendChild(el("div","small muted mt",`— ${curPhase==="N1"?"N1 (1ª prova)":"N2 (2ª prova)"} —`)); }
+      const row=el("label","mission"); row.style.cursor="pointer";
+      const checked=t.studied?"checked":"";
+      const qlabel = t.qCount ? `${t.qCount} questõe${t.qCount>1?"s":""}` : "sem questões ainda";
+      row.innerHTML=`<input type="checkbox" ${checked} style="width:20px;height:20px;accent-color:${d.color}">
+        <div class="info"><div class="nm">${esc(t.topic)}</div><div class="muted small">${qlabel}${hasSummary(disc,t.topic)?" · 📖 resumo":""}</div></div>
+        <div class="rw" style="color:${t.studied?'var(--good)':'var(--muted2)'}">${t.studied?"estudado":""}</div>`;
+      const cb=row.querySelector("input");
+      cb.onchange=()=>{ setStudied(disc,t.topic,cb.checked); render(); };
+      card.appendChild(row);
+    });
+    m.appendChild(card);
+  }
+
+  const foot=el("div","center muted small mt","Dica: marque só o que já estudou de verdade. Conforme avança na matéria, volte aqui e libere mais temas. 💪");
+  m.appendChild(foot);
+}
+
+/* ---------- RESUMOS ---------- */
+function hasSummary(disc,topic){ return !!SUMMARIES[tkey(disc,topic)]; }
+function viewSummaries(m){
+  const total=Object.keys(DISCIPLINES).reduce((a,d)=>a+planTopics(d).length,0);
+  const withS=Object.keys(SUMMARIES).length;
+  const head=el("div","card");
+  head.innerHTML=`<h3>📖 Resumos</h3>
+    <p class="muted small">Resumos objetivos por tema. Toque para abrir. Vá adicionando os seus editando <code>js/content.js</code> (bloco <b>SUMMARIES</b>) — o guia está no COMO-ADICIONAR-QUESTOES.md.</p>
+    <div class="muted small mt">${withS}/${total} temas com resumo</div>`;
+  m.appendChild(head);
+
+  for(const disc in DISCIPLINES){
+    const d=DISCIPLINES[disc];
+    const topics=planTopics(disc);
+    const comResumo=topics.filter(t=>hasSummary(disc,t.topic));
+    const card=el("div","card mt");
+    card.appendChild(el("div","",`<b>${d.icon} ${esc(d.name)}</b> <span class="muted small">(${comResumo.length}/${topics.length})</span>`));
+    if(!comResumo.length){
+      card.appendChild(el("div","muted small mt","Nenhum resumo ainda. Adicione em SUMMARIES: chave \""+disc+"::&lt;tema&gt;\"."));
+    }
+    comResumo.forEach(t=>{
+      const item=el("div"); item.style.cssText="border-top:1px solid var(--stroke);margin-top:10px;padding-top:10px";
+      const btn=el("button","opt"); btn.style.marginBottom="0";
+      btn.innerHTML=`📖 <b>${esc(t.topic)}</b> <span class="pill" style="float:right">${t.phase}</span>`;
+      const body=el("div","explain mt hidden"); body.innerHTML=esc(SUMMARIES[tkey(disc,t.topic)]).replace(/\n/g,"<br>");
+      btn.onclick=()=>{ body.classList.toggle("hidden"); };
+      item.append(btn,body); card.appendChild(item);
+    });
+    m.appendChild(card);
+  }
+}
+
 /* ---------- QUIZ ---------- */
 function startQuiz(disc, n, isSim=false){
-  let pool = disc==="all"?QUESTIONS.slice():QUESTIONS.filter(q=>q.discipline===disc);
+  // TRAVAMENTO: só caem questões de temas marcados como estudados no Plano
+  let pool = unlockedQuestions(disc==="all"?null:disc);
+  if(!pool.length){
+    const nome = disc && disc!=="all" ? DISCIPLINES[disc].name : "nenhuma matéria";
+    toast("Marque temas no Plano de Estudos para liberar questões 📋");
+    go("plan");
+    return;
+  }
   // prioriza questões ainda não dominadas
   pool.sort((a,b)=>{ const sa=S.seenQ[a.id]?.correct?1:0, sb=S.seenQ[b.id]?.correct?1:0; return sa-sb;});
   pool = shuffle(pool.slice(0, Math.max(n, Math.min(pool.length,n*2)))).slice(0,n);

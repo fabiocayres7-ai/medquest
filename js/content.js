@@ -20,6 +20,137 @@ const DISCIPLINES = {
   aps:       { name: "APS V — Saúde Ocupacional",   color: "#84cc16", icon: "👷" },
 };
 
+/* ============================ PLANO DE ESTUDOS (grade de temas) ============================
+   Cada tema tem: phase ("N1"/"N2") e topic (deve BATER com o campo "topic" das questões).
+   A pessoa marca o tema como estudado no app; só então caem questões daquele tema.
+   Temas sem questões ainda ("—") já ficam no plano; é só ir adicionando questões/resumos.
+   =========================================================================================== */
+const SYLLABUS = {
+  mad: [
+    { phase:"N1", topic:"Imunidade inata vs adaptativa" },
+    { phase:"N1", topic:"Classes de anticorpos" },
+    { phase:"N1", topic:"Sistema complemento" },
+    { phase:"N1", topic:"Perfis de linfócitos T CD4" },
+    { phase:"N1", topic:"Restrição pelo MHC" },
+    { phase:"N1", topic:"Terapia das doenças imunológicas" },
+    { phase:"N1", topic:"Tipagem sanguínea" },
+    { phase:"N1", topic:"Sepse" },
+    { phase:"N1", topic:"Tolerância imunológica" },
+    { phase:"N1", topic:"Senescência e exaustão imunológica" },
+    { phase:"N1", topic:"Imunologia dos tumores" },
+    { phase:"N1", topic:"Transplantes / HLA" },
+    { phase:"N1", topic:"GVHD" },
+    { phase:"N1", topic:"Imunodeficiências" },
+    { phase:"N2", topic:"Hipersensibilidade" },
+    { phase:"N2", topic:"Hipersensibilidade tipo II" },
+    { phase:"N2", topic:"Hipersensibilidade tipo III" },
+    { phase:"N2", topic:"Hipersensibilidade tipo IV" },
+    { phase:"N2", topic:"Imunologia das mucosas e alergia alimentar" },
+    { phase:"N2", topic:"Asma alérgica" },
+    { phase:"N2", topic:"Rinite alérgica" },
+    { phase:"N2", topic:"Autoimunidade órgão-específica" },
+    { phase:"N2", topic:"Autoimunidade sistêmica" },
+    { phase:"N2", topic:"Vasculites" },
+    { phase:"N2", topic:"Imunoensaios" },
+    { phase:"N2", topic:"Imunoensaios — método" },
+  ],
+  pratica: [
+    { phase:"N1", topic:"Patologia do esôfago" },
+    { phase:"N1", topic:"Patologia gástrica" },
+    { phase:"N1", topic:"Adenocarcinoma gástrico" },
+    { phase:"N1", topic:"Doença celíaca" },
+    { phase:"N1", topic:"Doença inflamatória intestinal" },
+    { phase:"N1", topic:"Sequência adenoma-carcinoma" },
+    { phase:"N1", topic:"Apendicite aguda" },
+    { phase:"N1", topic:"Pâncreas exócrino" },
+    { phase:"N1", topic:"Doenças hepáticas" },
+    { phase:"N1", topic:"Semiologia — síndromes ictéricas" },
+    { phase:"N2", topic:"Doença hepática — hepatites virais" },
+    { phase:"N2", topic:"Cirrose — complicações" },
+    { phase:"N2", topic:"Câncer de pâncreas" },
+    { phase:"N2", topic:"Pâncreas endócrino" },
+    { phase:"N2", topic:"Patologia da tireoide" },
+    { phase:"N2", topic:"Carcinoma de tireoide" },
+    { phase:"N2", topic:"Patologia das suprarrenais" },
+    { phase:"N2", topic:"Feocromocitoma" },
+    { phase:"N2", topic:"AVC — patologia" },
+    { phase:"N2", topic:"Semiologia — ascite" },
+    { phase:"N2", topic:"Semiologia — hipertireoidismo" },
+  ],
+  terap: [
+    { phase:"N1", topic:"Farmacocinética — meia-vida" },
+    { phase:"N1", topic:"Biodisponibilidade / vias" },
+    { phase:"N1", topic:"Clearance e dose" },
+    { phase:"N1", topic:"Cinética de ordem zero vs primeira" },
+    { phase:"N1", topic:"Volume de distribuição" },
+    { phase:"N2", topic:"Metabolismo — indução/inibição" },
+    { phase:"N2", topic:"Excreção renal" },
+    { phase:"N2", topic:"Farmacodinâmica — receptores" },
+    { phase:"N2", topic:"Janela terapêutica e monitorização" },
+  ],
+  rci: [
+    { phase:"N1", topic:"Úlcera péptica" },
+    { phase:"N1", topic:"Abdome agudo vascular" },
+    { phase:"N1", topic:"Hemorragia digestiva" },
+    { phase:"N2", topic:"Hepatite medicamentosa" },
+    { phase:"N2", topic:"Icterícia obstrutiva" },
+    { phase:"N2", topic:"Pancreatite aguda — conduta" },
+  ],
+  legal: [
+    { phase:"N1", topic:"Traumatologia forense" },
+    { phase:"N1", topic:"Lesões perfurocontusas" },
+    { phase:"N1", topic:"Tanatologia forense" },
+    { phase:"N2", topic:"Ética / documentos" },
+    { phase:"N2", topic:"Sexologia forense" },
+    { phase:"N2", topic:"Toxicologia forense" },
+  ],
+  cirurgia: [
+    { phase:"N1", topic:"Antissepsia e assepsia" },
+    { phase:"N1", topic:"Tempos cirúrgicos" },
+    { phase:"N1", topic:"Cicatrização" },
+    { phase:"N1", topic:"Ambiente e paramentação" },
+    { phase:"N2", topic:"Fios e suturas" },
+    { phase:"N2", topic:"Nós e técnicas de sutura" },
+  ],
+  pig: [
+    { phase:"N1", topic:"SUS e regulação" },
+    { phase:"N1", topic:"Linha de cuidado" },
+    { phase:"N1", topic:"Financiamento em saúde" },
+    { phase:"N1", topic:"Níveis de atenção" },
+  ],
+  aps: [
+    { phase:"N2", topic:"Saúde do trabalhador" },
+    { phase:"N2", topic:"Documentos ocupacionais" },
+    { phase:"N2", topic:"Nexo causal" },
+    { phase:"N2", topic:"Vigilância e notificação" },
+  ],
+};
+
+/* ============================ RESUMOS ============================
+   Chave: "<disciplina>::<topic>" (mesmo topic do plano/questões).
+   Corpo em texto; use quebras de linha. Vá adicionando conforme o plano.
+   Ex.: "mad::Sepse": "Definição...\n- item\n- item".
+   ================================================================= */
+const SUMMARIES = {
+  "mad::Sepse":
+    "SEPSE = disfunção orgânica ameaçadora à vida por resposta desregulada à infecção.\n"+
+    "• Choque séptico: sepse + vasopressor p/ PAM ≥ 65 + lactato > 2 apesar de volume.\n"+
+    "• Mediadores: TNF-α, IL-1, IL-6 e NO → vasodilatação + ↑permeabilidade → choque distributivo.\n"+
+    "• Reconhecimento (qSOFA): FR ≥ 22, PAS ≤ 100, alteração do estado mental.\n"+
+    "• Conduta (1ª hora): coletar lactato + culturas, antibiótico precoce, cristaloide 30 mL/kg, vasopressor (noradrenalina) se hipotensão refratária.",
+  "pratica::Semiologia — síndromes ictéricas":
+    "ICTERÍCIA — padrões:\n"+
+    "• Pré-hepática (hemólise): bilirrubina INDIRETA ↑, sem colúria, LDH ↑, haptoglobina ↓.\n"+
+    "• Hepatocelular: ALT/AST ↑↑; gravidade pelo INR/albumina.\n"+
+    "• Colestática/obstrutiva: bilirrubina DIRETA ↑, FA e GGT ↑↑, colúria + acolia + prurido.\n"+
+    "• Courvoisier (vesícula palpável indolor) → obstrução maligna distal (pâncreas).",
+  "terap::Farmacocinética — meia-vida":
+    "MEIA-VIDA (t½) e STEADY STATE:\n"+
+    "• Steady state e eliminação quase completa: ~4–5 meias-vidas (independe da dose).\n"+
+    "• Dose de ataque = Vd × Css (preenche o volume). Manutenção = Clearance × Css.\n"+
+    "• 1ª ordem: elimina fração constante, t½ estável. Ordem zero: quantidade fixa/tempo (etanol, fenitoína, AAS).",
+};
+
 /* ============================ QUESTÕES ============================ */
 const QUESTIONS = [
   /* ---------------- MAD II — Imunologia ---------------- */
@@ -984,6 +1115,444 @@ const QUESTIONS = [
     explanation: "Nexo causal é a RELAÇÃO entre a doença/agravo e o trabalho — estabelecê-lo é etapa central da conduta em Saúde do Trabalhador (junto com anamnese ocupacional, avaliação da capacidade laboral, emissão de CAT e notificação no SINAN). A melhora em repouso/férias e a anamnese ocupacional ajudam a firmá-lo.",
     tags: ["nexo causal", "saúde do trabalhador", "anamnese ocupacional"]
   },
+
+  /* ==================== LOTE RESIDÊNCIA — clínico e mais difícil ==================== */
+
+  /* ---- MAD II ---- */
+  {
+    id: "mad23", discipline: "mad", phase: "N1", topic: "Terapia das doenças imunológicas", difficulty: 3,
+    vignette: "Paciente com artrite reumatoide refratária a metotrexato inicia terapia com anti-TNF-α (infliximabe). Antes de iniciar, o serviço solicita PPD/IGRA e radiografia de tórax.",
+    question: "Qual a justificativa imunológica para esse rastreio prévio?",
+    options: [
+      "O anti-TNF causa hepatotoxicidade e o exame avalia o fígado",
+      "O TNF-α é essencial para a formação e manutenção do granuloma; bloqueá-lo pode REATIVAR tuberculose latente",
+      "O anti-TNF induz nefrite e o PPD avalia a função renal",
+      "O rastreio busca alergia ao próprio anticorpo monoclonal",
+      "É apenas exigência burocrática, sem base fisiopatológica"
+    ],
+    answer: 1,
+    explanation: "O TNF-α mantém a integridade do GRANULOMA que contém o M. tuberculosis latente. Ao bloquear o TNF, o granuloma se desestrutura e pode haver REATIVAÇÃO de TB (inclusive formas disseminadas). Por isso, antes de imunobiológicos anti-TNF, rastreia-se TB latente (PPD/IGRA + RX) e trata-se se positivo. Conceito clássico de imunoterapia.",
+    tags: ["anti-TNF", "granuloma", "TB latente"]
+  },
+  {
+    id: "mad24", discipline: "mad", phase: "N2", topic: "Autoimunidade sistêmica", difficulty: 3,
+    vignette: "Mulher de 32 anos com história de 3 abortos espontâneos, trombose venosa profunda prévia e plaquetopenia. Anticoagulante lúpico e anti-cardiolipina positivos em duas dosagens com 12 semanas de intervalo.",
+    question: "O diagnóstico e o mecanismo predominante são:",
+    options: [
+      "Lúpus isolado; deposição de imunocomplexos renais",
+      "Síndrome antifosfolípide; autoanticorpos pró-trombóticos causando tromboses e perdas fetais",
+      "Púrpura trombocitopênica trombótica; deficiência de ADAMTS13",
+      "Trombofilia hereditária (fator V de Leiden); mutação genética",
+      "Vasculite ANCA; inflamação de pequenos vasos"
+    ],
+    answer: 1,
+    explanation: "Tromboses (arteriais/venosas) + morbidade gestacional + anticorpos antifosfolípides (anticoagulante lúpico, anticardiolipina, anti-β2-glicoproteína) persistentes ≥ 12 semanas = SÍNDROME ANTIFOSFOLÍPIDE. Os anticorpos ativam plaquetas/endotélio e a cascata da coagulação → estado pró-trombótico. Pode ser primária ou associada ao LES. Tratamento: anticoagulação.",
+    tags: ["SAF", "trombose", "antifosfolípide"]
+  },
+  {
+    id: "mad25", discipline: "mad", phase: "N2", topic: "Imunologia das mucosas e alergia alimentar", difficulty: 2,
+    vignette: "Lactente de 4 meses em aleitamento materno exclusivo apresenta sangue nas fezes, sem toxemia. Mãe consome leite de vaca. Melhora com dieta materna de exclusão do leite.",
+    question: "A hipótese e o mecanismo mais provável são:",
+    options: [
+      "Alergia à proteína do leite de vaca não IgE-mediada (proctocolite alérgica), mecanismo celular",
+      "Anafilaxia IgE-mediada ao leite",
+      "Intolerância à lactose por deficiência de lactase",
+      "Doença celíaca do lactente",
+      "Invaginação intestinal"
+    ],
+    answer: 0,
+    explanation: "Proctocolite alérgica: lactente com bom estado geral e sangue nas fezes, desencadeada por proteína do leite de vaca (via leite materno). É reação NÃO IgE-mediada, de mecanismo predominantemente CELULAR (linfócitos T), de início tardio — diferente da anafilaxia (IgE, imediata). Conduta: exclusão do leite da dieta materna. Intolerância à lactose não causa sangramento.",
+    tags: ["APLV", "não IgE", "mucosa"]
+  },
+  {
+    id: "mad26", discipline: "mad", phase: "N2", topic: "Rinite alérgica", difficulty: 2,
+    vignette: "Adolescente com espirros em salva, prurido nasal, rinorreia aquosa e obstrução, sazonais, com cornetos pálidos e edemaciados à rinoscopia.",
+    question: "Sobre o tratamento de primeira linha da rinite alérgica persistente moderada/grave:",
+    options: [
+      "Antibiótico sistêmico",
+      "Corticosteroide intranasal, o mais eficaz para controle da inflamação alérgica",
+      "Descongestionante tópico de uso contínuo",
+      "Anti-histamínico de primeira geração em altas doses",
+      "Imunossupressor sistêmico"
+    ],
+    answer: 1,
+    explanation: "O CORTICOIDE INTRANASAL é o tratamento mais eficaz da rinite alérgica moderada/grave (reduz a inflamação Th2 local). Anti-histamínicos ajudam nos sintomas; descongestionantes tópicos por mais de 5 dias causam rinite medicamentosa (efeito rebote). Antibiótico não tem papel (é alérgica, não infecciosa). Imunoterapia é opção para casos selecionados.",
+    tags: ["rinite", "corticoide nasal", "Th2"]
+  },
+
+  /* ---- Prática Clínica II ---- */
+  {
+    id: "pat20", discipline: "pratica", phase: "N1", topic: "Doenças hepáticas", difficulty: 3,
+    vignette: "Homem de 45 anos, obeso, diabético e dislipidêmico, com transaminases levemente elevadas (ALT>AST), sem uso de álcool. USG com esteatose; biópsia mostra esteatose, balonização hepatocitária e infiltrado inflamatório.",
+    question: "O diagnóstico e o risco evolutivo são:",
+    options: [
+      "Hepatite alcoólica; risco de cirrose se mantiver o álcool",
+      "Esteato-hepatite não alcoólica (NASH); pode evoluir para fibrose, cirrose e CHC",
+      "Hepatite viral C; cronificação em 80%",
+      "Hemocromatose; sobrecarga de ferro",
+      "Colangite biliar primária; anti-mitocôndria positivo"
+    ],
+    answer: 1,
+    explanation: "Síndrome metabólica (obesidade, DM2, dislipidemia) + esteatose com balonização e inflamação, SEM álcool = ESTEATO-HEPATITE NÃO ALCOÓLICA (NASH). A balonização/inflamação distingue NASH da esteatose simples. Pode progredir para fibrose → cirrose → CHC. Na doença alcoólica costuma haver AST>ALT (relação >2); aqui é o inverso. Tratamento: perda de peso e controle metabólico.",
+    tags: ["NASH", "esteatose", "síndrome metabólica"]
+  },
+  {
+    id: "pat21", discipline: "pratica", phase: "N1", topic: "Pâncreas exócrino", difficulty: 3,
+    vignette: "Paciente no 3º dia de pancreatite aguda grave evolui com dispneia, hipoxemia e infiltrado pulmonar bilateral; PaO2/FiO2 = 180 sem sinais de congestão cardíaca.",
+    question: "A complicação sistêmica mais provável é:",
+    options: [
+      "Edema agudo de pulmão cardiogênico",
+      "Síndrome do desconforto respiratório agudo (SDRA) por resposta inflamatória sistêmica",
+      "Tromboembolismo pulmonar",
+      "Pneumonia bacteriana comunitária",
+      "Derrame pleural transudativo isolado"
+    ],
+    answer: 1,
+    explanation: "A pancreatite grave desencadeia resposta inflamatória sistêmica (SIRS), e a liberação de mediadores/enzimas lesa o endotélio alveolar → SDRA (hipoxemia, infiltrado bilateral, PaO2/FiO2 baixo, sem origem cardíaca). É causa clássica de SDRA e marcador de gravidade. Diferencia-se do edema cardiogênico pela ausência de congestão/disfunção cardíaca.",
+    tags: ["SDRA", "pancreatite grave", "SIRS"]
+  },
+  {
+    id: "pat22", discipline: "pratica", phase: "N2", topic: "Patologia da tireoide", difficulty: 3,
+    vignette: "Mulher com dor cervical anterior, febre baixa e disfagia após quadro viral de vias aéreas. Ao exame, tireoide dolorosa. Inicialmente com sintomas de hipertireoidismo, VHS muito elevado e captação de iodo REDUZIDA.",
+    question: "O diagnóstico é:",
+    options: [
+      "Doença de Graves",
+      "Tireoidite subaguda (De Quervain), granulomatosa, pós-viral",
+      "Tireoidite de Hashimoto",
+      "Carcinoma anaplásico",
+      "Bócio multinodular tóxico"
+    ],
+    answer: 1,
+    explanation: "Tireoide DOLOROSA + pós-viral + VHS muito alto + tireotoxicose com captação de iodo BAIXA = tireoidite subaguda de DE QUERVAIN (granulomatosa). O hipertireoidismo é por liberação do hormônio pré-formado pela destruição do folículo (por isso captação baixa, ao contrário de Graves, que tem captação alta). Costuma ser autolimitada; trata-se a dor (AINE) e sintomas. Hashimoto é indolor.",
+    tags: ["De Quervain", "tireoidite", "captação"]
+  },
+  {
+    id: "pat23", discipline: "pratica", phase: "N2", topic: "Patologia das suprarrenais", difficulty: 3,
+    vignette: "Paciente com fraqueza, perda de peso, hiperpigmentação de pele e mucosas, hipotensão, hiponatremia e hipercalemia. Cortisol baixo e ACTH elevado.",
+    question: "O diagnóstico e o mecanismo da hiperpigmentação são:",
+    options: [
+      "Síndrome de Cushing; excesso de cortisol",
+      "Insuficiência adrenal primária (Addison); ACTH elevado, e o excesso de POMC/MSH causa hiperpigmentação",
+      "Hiperaldosteronismo; excesso de aldosterona",
+      "Feocromocitoma; catecolaminas",
+      "Insuficiência adrenal secundária; ACTH baixo"
+    ],
+    answer: 1,
+    explanation: "Cortisol baixo com ACTH ALTO + hiperpigmentação + hipotensão + hiponatremia/hipercalemia = insuficiência adrenal PRIMÁRIA (Addison). Como a adrenal não responde, a hipófise aumenta a POMC (precursora de ACTH e de MSH) → estímulo dos melanócitos → HIPERPIGMENTAÇÃO. Na insuficiência SECUNDÁRIA (hipofisária) o ACTH é baixo e NÃO há hiperpigmentação nem hipercalemia (aldosterona preservada).",
+    tags: ["Addison", "ACTH", "hiperpigmentação"]
+  },
+  {
+    id: "pat24", discipline: "pratica", phase: "N2", topic: "Pâncreas endócrino", difficulty: 3,
+    vignette: "Paciente diabético tipo 1 chega ao PS com poliúria, dor abdominal, respiração de Kussmaul e hálito cetônico. Glicemia 480 mg/dL, pH 7,18, bicarbonato 12, cetonúria +++.",
+    question: "Além de insulina, qual é a prioridade INICIAL do tratamento?",
+    options: [
+      "Bicarbonato de sódio em bolus imediato",
+      "Reposição volêmica vigorosa com salina e correção do potássio antes/junto da insulina",
+      "Insulina em bolus alto sem hidratação",
+      "Glicose hipertônica",
+      "Antibiótico empírico de amplo espectro"
+    ],
+    answer: 1,
+    explanation: "Cetoacidose diabética: a prioridade inicial é HIDRATAÇÃO (salina 0,9%) e atenção ao POTÁSSIO — a insulina desloca K+ para dentro da célula e pode causar hipocalemia grave; se K+ < 3,3, repõe-se K antes da insulina. Bicarbonato só em acidose muito grave (pH < 6,9). A tríade do tratamento é volume + insulina + potássio. Raciocínio de conduta típico de prova.",
+    tags: ["CAD", "potássio", "hidratação"]
+  },
+
+  /* ---- Terapêutica I ---- */
+  {
+    id: "ter07", discipline: "terap", phase: "N1", topic: "Volume de distribuição", difficulty: 3,
+    vignette: "Um fármaco muito lipofílico distribui-se amplamente nos tecidos, resultando em volume de distribuição (Vd) elevado.",
+    question: "Qual a implicação clínica prática de um Vd alto?",
+    options: [
+      "O fármaco é facilmente removido por hemodiálise",
+      "É necessária maior dose de ATAQUE para atingir a concentração plasmática desejada, e a remoção por diálise é pouco eficaz",
+      "A meia-vida é sempre curta",
+      "A biodisponibilidade oral é de 100%",
+      "O fármaco fica restrito ao plasma"
+    ],
+    answer: 1,
+    explanation: "Vd alto = o fármaco 'sai' do plasma para os tecidos (lipofílico, sequestrado). Consequências: exige DOSE DE ATAQUE maior (Dose de ataque = Vd × Css) para encher esse volume aparente, e a HEMODIÁLISE é ineficaz (pouco fármaco no plasma para remover). Fármacos com Vd baixo (restritos ao plasma) são melhor dialisáveis. Aplicação clínica direta do conceito de Vd.",
+    tags: ["Vd", "dose de ataque", "diálise"]
+  },
+  {
+    id: "ter08", discipline: "terap", phase: "N1", topic: "Clearance e dose", difficulty: 3,
+    vignette: "Paciente com clearance de creatinina de 25 mL/min precisa usar um fármaco de eliminação predominantemente RENAL, com índice terapêutico estreito.",
+    question: "Qual o ajuste correto e a razão?",
+    options: [
+      "Aumentar a dose, pois o rim elimina mais rápido",
+      "Reduzir a dose e/ou aumentar o intervalo, pois a queda do clearance renal eleva a concentração e o risco de toxicidade",
+      "Manter a dose habitual, pois o rim não influencia",
+      "Suspender qualquer hidratação",
+      "Trocar por via inalatória obrigatoriamente"
+    ],
+    answer: 1,
+    explanation: "Se o fármaco é eliminado pelo rim e o clearance renal caiu (DRC), a eliminação diminui → acúmulo → toxicidade (pior em índice terapêutico estreito, ex.: vancomicina, digoxina, aminoglicosídeos). Conduta: REDUZIR a dose e/ou ESPAÇAR o intervalo, guiando-se por níveis séricos quando disponíveis. Relaciona clearance, função renal e ajuste posológico.",
+    tags: ["clearance renal", "ajuste de dose", "índice terapêutico"]
+  },
+  {
+    id: "ter09", discipline: "terap", phase: "N2", topic: "Farmacodinâmica — receptores", difficulty: 3,
+    vignette: "Um paciente intoxicado por opioide (miose, depressão respiratória, rebaixamento) recebe naloxona e melhora imediatamente.",
+    question: "A naloxona atua como:",
+    options: [
+      "Agonista total do receptor opioide",
+      "Antagonista competitivo do receptor opioide, deslocando o agonista",
+      "Agonista parcial com efeito-teto",
+      "Inibidor enzimático do metabolismo do opioide",
+      "Agonista inverso dos receptores GABA"
+    ],
+    answer: 1,
+    explanation: "A naloxona é ANTAGONISTA COMPETITIVO dos receptores opioides: liga-se ao receptor sem ativá-lo e DESLOCA o agonista (opioide), revertendo a depressão respiratória. Antagonista competitivo desloca a curva dose-resposta do agonista para a direita (↓potência, Emax mantido com mais agonista). Atenção: meia-vida curta pode exigir repetição. Conceito central de farmacodinâmica.",
+    tags: ["antagonista", "naloxona", "receptor"]
+  },
+  {
+    id: "ter10", discipline: "terap", phase: "N2", topic: "Janela terapêutica e monitorização", difficulty: 3,
+    vignette: "Paciente em uso de digoxina apresenta náuseas, visão amarelada (xantopsia) e bradiarritmia. Está em uso recente de furosemida.",
+    question: "Qual fator provavelmente precipitou a toxicidade e por quê?",
+    options: [
+      "Hipercalemia induzida pela furosemida",
+      "Hipocalemia induzida pela furosemida, que potencializa a ligação da digoxina à bomba Na/K-ATPase",
+      "Aumento do clearance da digoxina",
+      "Indução enzimática do CYP pela furosemida",
+      "Redução da absorção da digoxina"
+    ],
+    answer: 1,
+    explanation: "A digoxina tem janela terapêutica ESTREITA. A furosemida causa HIPOCALEMIA, e o baixo potássio aumenta a ligação da digoxina à Na/K-ATPase, POTENCIALIZANDO sua ação e toxicidade (náusea, xantopsia, arritmias). Por isso, monitoriza-se K+ e nível sérico de digoxina. Exemplo clássico de interação por índice terapêutico estreito.",
+    tags: ["digoxina", "hipocalemia", "monitorização"]
+  },
+  {
+    id: "ter11", discipline: "terap", phase: "N1", topic: "Biodisponibilidade / vias", difficulty: 2,
+    vignette: "Paciente em crise convulsiva precisa de benzodiazepínico com início de ação mais rápido possível, sem acesso venoso imediato disponível.",
+    question: "Qual via oferece início de ação mais rápido nesse cenário e por quê?",
+    options: [
+      "Via oral, por ser mais cômoda",
+      "Vias que evitam a primeira passagem e têm boa absorção (endovenosa se possível; alternativas: intranasal/bucal/retal) — início mais rápido que a oral",
+      "Via oral com dose dobrada",
+      "Via subcutânea de depósito",
+      "Via transdérmica"
+    ],
+    answer: 1,
+    explanation: "A via ENDOVENOSA é a mais rápida (F=100%, sem primeira passagem). Sem acesso, alternativas de absorção rápida e que evitam a primeira passagem hepática — intranasal, bucal/sublingual ou retal — superam a oral (que é lenta e sofre metabolismo de primeira passagem). Relaciona via de administração, biodisponibilidade e velocidade de início.",
+    tags: ["vias", "primeira passagem", "emergência"]
+  },
+
+  /* ---- RCI V (casos clínicos integrados) ---- */
+  {
+    id: "rci04", discipline: "rci", phase: "N1", topic: "Hemorragia digestiva", difficulty: 3,
+    vignette: "Homem de 58 anos, etilista, dá entrada com hematêmese volumosa e melena. PA 90x60, FC 118. Ao exame: ascite, telangiectasias e esplenomegalia. Suspeita-se de varizes esofágicas.",
+    question: "Além da estabilização hemodinâmica, qual conduta farmacológica inicial é prioritária?",
+    options: [
+      "Iniciar anticoagulação plena",
+      "Droga vasoativa esplâncnica (terlipressina/octreotide) + antibioticoprofilaxia, antes da endoscopia",
+      "AINE endovenoso para dor",
+      "Betabloqueador em bolus para a taquicardia",
+      "Corticoide em altas doses"
+    ],
+    answer: 1,
+    explanation: "HDA varicosa no cirrótico: após estabilizar (2 acessos calibrosos, cristaloide, hemotransfusão criteriosa), inicia-se DROGA VASOATIVA esplâncnica (terlipressina ou octreotide) para reduzir a pressão portal e ANTIBIOTICOPROFILAXIA (ceftriaxona — reduz mortalidade e ressangramento), seguidos de ENDOSCOPIA (ligadura elástica) idealmente em até 12 h. Betabloqueador é para profilaxia, não na hemorragia aguda.",
+    tags: ["HDA varicosa", "terlipressina", "profilaxia"]
+  },
+  {
+    id: "rci05", discipline: "rci", phase: "N2", topic: "Icterícia obstrutiva", difficulty: 3,
+    vignette: "Mulher de 60 anos com dor em hipocôndrio direito, febre com calafrios e icterícia. Bilirrubina direta e FA elevadas; USG com dilatação de vias biliares e cálculo no colédoco.",
+    question: "A síndrome (tríade de Charcot) indica qual diagnóstico e conduta?",
+    options: [
+      "Colecistite aguda; colecistectomia eletiva em 6 semanas",
+      "Colangite aguda; antibiótico + DESCOMPRESSÃO da via biliar (CPRE) de urgência",
+      "Hepatite viral; suporte clínico",
+      "Pancreatite crônica; enzimas pancreáticas",
+      "Abscesso hepático; drenagem percutânea apenas"
+    ],
+    answer: 1,
+    explanation: "Dor em HCD + febre/calafrios + icterícia = tríade de CHARCOT = COLANGITE AGUDA (infecção da via biliar obstruída, geralmente por cálculo no colédoco). É emergência: antibiótico + DESCOMPRESSÃO biliar (CPRE com papilotomia/retirada do cálculo). Se acrescentar hipotensão e confusão (pêntade de Reynolds) → colangite tóxica, ainda mais grave. Reconhecer a tríade e a urgência da drenagem é o ponto-chave.",
+    tags: ["colangite", "Charcot", "CPRE"]
+  },
+  {
+    id: "rci06", discipline: "rci", phase: "N2", topic: "Pancreatite aguda — conduta", difficulty: 3,
+    vignette: "Paciente com pancreatite aguda biliar. Após a fase aguda, discute-se prevenção de recorrência.",
+    question: "Qual a conduta definitiva para prevenir novos episódios de pancreatite biliar?",
+    options: [
+      "Uso contínuo de inibidor de bomba de prótons",
+      "Colecistectomia (idealmente na mesma internação, após melhora) para remover a fonte dos cálculos",
+      "Dieta zero permanente",
+      "Antibiótico profilático crônico",
+      "Reposição enzimática pancreática vitalícia"
+    ],
+    answer: 1,
+    explanation: "Na pancreatite aguda BILIAR, a prevenção definitiva de recorrência é a COLECISTECTOMIA (remove a origem dos cálculos), preferencialmente na MESMA internação nos casos leves, após a resolução do quadro. Se houver cálculo no colédoco/colangite, faz-se CPRE antes. Antibiótico profilático não é recomendado na pancreatite sem infecção. Conduta clássica.",
+    tags: ["pancreatite biliar", "colecistectomia", "recorrência"]
+  },
+
+  /* ---- Medicina Legal ---- */
+  {
+    id: "leg04", discipline: "legal", phase: "N1", topic: "Tanatologia forense", difficulty: 3,
+    vignette: "Perícia em cadáver encontrado descreve livores fixos na região dorsal, rigidez cadavérica generalizada e temperatura corporal reduzida.",
+    question: "Sobre os fenômenos cadavéricos e a estimativa do tempo de morte, é correto:",
+    options: [
+      "Livores fixos indicam morte há menos de 1 hora",
+      "Livores tornam-se FIXOS após ~8–12 h e sua localização (dorsal) indica a posição do corpo; a rigidez segue cronologia própria",
+      "A rigidez cadavérica aparece imediatamente após a morte e some em 1 hora",
+      "A temperatura não tem qualquer valor médico-legal",
+      "Livores dorsais indicam que o corpo foi enforcado em pé"
+    ],
+    answer: 1,
+    explanation: "Fenômenos cadavéricos ajudam a estimar o tempo e as circunstâncias da morte. Os LIVORES (hipóstases) surgem por gravidade nas partes de declive, são móveis no início e FIXAM-se em ~8–12 h (indicam a posição do corpo — dorsal = decúbito dorsal). A RIGIDEZ (rigor mortis) instala-se progressivamente (início ~2–3 h, completa ~6–12 h) e depois se resolve. O esfriamento (algor mortis) também é usado. Base da tanatologia forense.",
+    tags: ["livores", "rigidez", "tempo de morte"]
+  },
+  {
+    id: "leg05", discipline: "legal", phase: "N1", topic: "Traumatologia forense", difficulty: 3,
+    vignette: "Vítima de agressão apresenta fratura de ossos próprios do nariz, com incapacidade para as atividades habituais por mais de 30 dias, comprovada pericialmente.",
+    question: "Segundo a tipificação das lesões corporais, essa lesão classifica-se como de natureza:",
+    options: [
+      "Leve",
+      "Grave (por incapacidade para as ocupações habituais por mais de 30 dias)",
+      "Gravíssima",
+      "Contravenção sem lesão",
+      "Vias de fato"
+    ],
+    answer: 1,
+    explanation: "A lesão corporal de natureza GRAVE inclui, entre outros critérios, a INCAPACIDADE para as ocupações habituais por MAIS DE 30 DIAS (comprovada por exame complementar). A gravíssima envolve, por exemplo, incapacidade permanente, deformidade permanente, perda de membro/função, aborto. Saber os critérios de leve/grave/gravíssima é cobrado em medicina legal.",
+    tags: ["lesão corporal", "grave", "30 dias"]
+  },
+  {
+    id: "leg06", discipline: "legal", phase: "N2", topic: "Ética / documentos", difficulty: 2,
+    vignette: "Um médico é procurado por familiar de paciente já falecido solicitando cópia do prontuário; em outro momento, a polícia solicita informações sobre atendimento de paciente vivo sem autorização judicial.",
+    question: "Qual conduta é a correta quanto ao sigilo?",
+    options: [
+      "Fornecer tudo a qualquer pessoa que solicitar",
+      "O sigilo persiste após a morte; a liberação de dados segue as normas (herdeiros/representantes conforme resolução) e a quebra a pedido de autoridade exige respaldo legal/justa causa",
+      "A polícia sempre tem direito irrestrito ao prontuário sem ordem judicial",
+      "O sigilo cessa automaticamente com a morte do paciente",
+      "O médico deve destruir o prontuário após a alta"
+    ],
+    answer: 1,
+    explanation: "O SIGILO médico PERSISTE após a morte do paciente. A liberação de informações/prontuário obedece às normas do CFM (a herdeiros/representantes legais em situações específicas) e a quebra a pedido de autoridade requer respaldo legal (ordem judicial) ou justa causa — não é irrestrita. O prontuário deve ser guardado (prazo mínimo estabelecido), não destruído. Ética e sigilo são temas frequentes.",
+    tags: ["sigilo", "prontuário", "post mortem"]
+  },
+  {
+    id: "leg07", discipline: "legal", phase: "N2", topic: "Toxicologia forense", difficulty: 2,
+    vignette: "Investigação de morte suspeita solicita dosagem toxicológica. Discute-se a coleta de amostras biológicas.",
+    question: "Sobre a coleta em toxicologia forense, assinale a correta:",
+    options: [
+      "Apenas sangue periférico tem valor, nenhuma outra amostra",
+      "Diferentes matrizes (sangue, humor vítreo, urina, conteúdo gástrico, cabelo) fornecem informações complementares sobre exposição recente e pregressa, respeitando a cadeia de custódia",
+      "A cadeia de custódia é irrelevante para o laudo",
+      "O cabelo não serve para avaliar uso crônico",
+      "O humor vítreo não pode ser utilizado"
+    ],
+    answer: 1,
+    explanation: "Na toxicologia forense usam-se MÚLTIPLAS matrizes: sangue (exposição recente/concentração), humor vítreo (mais estável à putrefação), urina (metabólitos), conteúdo gástrico (ingestão), e CABELO (exposição crônica/retrospectiva). A CADEIA DE CUSTÓDIA (registro íntegro da amostra) é essencial para a validade jurídica do laudo. Conceito de coleta e interpretação.",
+    tags: ["toxicologia", "cadeia de custódia", "matrizes"]
+  },
+
+  /* ---- Introdução à Prática Cirúrgica ---- */
+  {
+    id: "cir05", discipline: "cirurgia", phase: "N1", topic: "Ambiente e paramentação", difficulty: 2,
+    vignette: "Durante a paramentação cirúrgica, discute-se o que é considerado campo estéril.",
+    question: "Qual afirmação sobre a técnica asséptica no centro cirúrgico é correta?",
+    options: [
+      "A região posterior do avental (costas) é considerada estéril",
+      "Considera-se estéril a parte frontal do avental do umbigo/cintura para cima até os ombros e as mangas; abaixo da cintura e as costas NÃO são estéreis",
+      "As mãos podem ficar abaixo da cintura após a paramentação",
+      "O gorro e a máscara fazem parte do campo estéril das mãos",
+      "Qualquer superfície da sala é estéril"
+    ],
+    answer: 1,
+    explanation: "Após paramentado, o campo estéril do cirurgião é a FRENTE do avental entre a cintura e os ombros e as mangas (até acima do cotovelo); COSTAS e região ABAIXO da cintura NÃO são estéreis, por isso as mãos são mantidas acima da cintura e à frente. Instrumentador e cirurgião não tocam áreas não estéreis. Base da técnica asséptica no CC.",
+    tags: ["campo estéril", "paramentação", "assepsia"]
+  },
+  {
+    id: "cir06", discipline: "cirurgia", phase: "N2", topic: "Fios e suturas", difficulty: 3,
+    vignette: "Ao final de uma laparotomia, o cirurgião vai suturar a aponeurose (parede abdominal) e, separadamente, a pele.",
+    question: "Qual a escolha de fios mais adequada para cada plano?",
+    options: [
+      "Aponeurose com fio absorvível de rápida absorção; pele com categute",
+      "Aponeurose com fio de absorção lenta/inabsorvível resistente (ex.: PDS ou nylon); pele com fio inabsorvível monofilamentar (nylon)",
+      "Ambos com seda multifilamentar",
+      "Aponeurose com categute simples; pele com fio absorvível trançado",
+      "Ambos os planos sem sutura, apenas cola"
+    ],
+    answer: 1,
+    explanation: "A APONEUROSE exige RESISTÊNCIA prolongada (cicatriza devagar; risco de hérnia incisional) → fio de absorção lenta (PDS) ou inabsorvível resistente. A PELE usa fio INABSORVÍVEL MONOFILAMENTAR (nylon/polipropileno), que causa menos reação/infecção e é retirado depois. Categute (absorção rápida) não serve para planos que precisam de força. Escolha de fio por plano é muito cobrada.",
+    tags: ["aponeurose", "PDS", "nylon"]
+  },
+  {
+    id: "cir07", discipline: "cirurgia", phase: "N1", topic: "Cicatrização", difficulty: 3,
+    vignette: "Paciente diabético descompensado e desnutrido evolui, no pós-operatório, com deiscência de ferida e cicatrização lenta.",
+    question: "Qual fator abaixo prejudica DIRETAMENTE a síntese de colágeno e a cicatrização?",
+    options: [
+      "Boa oxigenação tecidual",
+      "Deficiência de vitamina C (necessária à hidroxilação do colágeno), hiperglicemia e desnutrição",
+      "Níveis normais de proteínas",
+      "Ausência de infecção",
+      "Perfusão tecidual adequada"
+    ],
+    answer: 1,
+    explanation: "A cicatrização depende de aporte adequado; PREJUDICAM-na: hiperglicemia/diabetes (disfunção leucocitária, microangiopatia), desnutrição/hipoproteinemia, deficiência de VITAMINA C (cofator da hidroxilação da prolina/lisina na síntese do colágeno → escorbuto compromete a cicatriz), hipóxia, infecção, corticoides e tabagismo. Boa oxigenação e nutrição FAVORECEM. Fatores que afetam a cicatrização são clássicos.",
+    tags: ["cicatrização", "vitamina C", "diabetes"]
+  },
+
+  /* ---- PIG V (Gestão em Saúde) ---- */
+  {
+    id: "pig03", discipline: "pig", phase: "N1", topic: "Níveis de atenção", difficulty: 2,
+    vignette: "Um gestor quer organizar a rede para que a maioria dos problemas de saúde seja resolvida próximo à comunidade, reservando serviços complexos para casos que realmente necessitem.",
+    question: "Qual princípio/estrutura do SUS corresponde a essa lógica?",
+    options: [
+      "Atenção hospitalar como porta de entrada preferencial",
+      "Atenção Primária como ordenadora do cuidado e porta de entrada, com hierarquização entre os níveis (primário, secundário, terciário)",
+      "Livre acesso direto à alta complexidade para todos",
+      "Centralização de todo o cuidado no nível terciário",
+      "Eliminação da referência e contrarreferência"
+    ],
+    answer: 1,
+    explanation: "A ATENÇÃO PRIMÁRIA (APS) é a porta de entrada preferencial e ORDENADORA do cuidado, resolvendo a maioria das demandas perto da comunidade; a hierarquização organiza os níveis primário/secundário/terciário, com referência e contrarreferência para os casos que exigem maior densidade tecnológica. Essa é a lógica de organização e regionalização do SUS.",
+    tags: ["APS", "hierarquização", "porta de entrada"]
+  },
+  {
+    id: "pig04", discipline: "pig", phase: "N1", topic: "Financiamento em saúde", difficulty: 2,
+    vignette: "Discussão sobre as fontes de recursos do sistema de saúde brasileiro.",
+    question: "Assinale a afirmação correta sobre o financiamento da saúde no Brasil:",
+    options: [
+      "O SUS é financiado exclusivamente pelo governo federal",
+      "O financiamento do SUS é tripartite (União, estados e municípios); há ainda gastos privados (planos e desembolso direto/out of pocket)",
+      "Todo o gasto em saúde é privado",
+      "O desembolso direto (out of pocket) não existe no Brasil",
+      "A ANS financia diretamente o SUS"
+    ],
+    answer: 1,
+    explanation: "O SUS tem financiamento TRIPARTITE — União, estados e municípios (com percentuais mínimos de aplicação definidos em lei). Além do público, existe o gasto PRIVADO: planos de saúde (saúde suplementar, regulada pela ANS) e o desembolso direto das famílias (out of pocket — ex.: medicamentos e itens não cobertos). Conceito básico de gestão/financiamento.",
+    tags: ["financiamento", "tripartite", "out of pocket"]
+  },
+
+  /* ---- APS V (Saúde Ocupacional) ---- */
+  {
+    id: "aps03", discipline: "aps", phase: "N2", topic: "Saúde do trabalhador", difficulty: 3,
+    vignette: "Operário de metalúrgica, exposto a ruído intenso por 10 anos sem proteção adequada, apresenta perda auditiva neurossensorial bilateral, simétrica, com entalhe na frequência de 4000 Hz na audiometria.",
+    question: "Qual a hipótese e a conduta ocupacional prioritária?",
+    options: [
+      "Otite média; antibiótico",
+      "Perda auditiva induzida por ruído (PAIR) ocupacional; estabelecer nexo, emitir CAT, notificar e afastar da exposição",
+      "Presbiacusia; apenas observação",
+      "Rolha de cerume; lavagem auricular",
+      "Surdez súbita idiopática; corticoide"
+    ],
+    answer: 1,
+    explanation: "Perda neurossensorial bilateral com ENTALHE em 4 kHz + exposição crônica a ruído = PAIR (perda auditiva induzida por ruído), doença ocupacional. Conduta: estabelecer NEXO causal, emitir CAT, notificar (SINAN), e sobretudo AFASTAR/reduzir a exposição e garantir EPI/medidas coletivas — a PAIR é irreversível, mas previne-se a progressão. Integra clínica + conduta ocupacional.",
+    tags: ["PAIR", "ruído", "CAT"]
+  },
+  {
+    id: "aps04", discipline: "aps", phase: "N2", topic: "Vigilância e notificação", difficulty: 2,
+    vignette: "Uma unidade de saúde identifica um caso de doença relacionada ao trabalho de notificação compulsória.",
+    question: "Qual sistema/instrumento é utilizado e qual o objetivo?",
+    options: [
+      "Apenas prontuário interno, sem notificação",
+      "Notificação no SINAN (Sistema de Informação de Agravos de Notificação), para vigilância epidemiológica e orientação de políticas",
+      "Somente comunicação verbal ao empregador",
+      "Registro exclusivamente no plano de saúde privado",
+      "Nenhuma ação é necessária"
+    ],
+    answer: 1,
+    explanation: "Agravos e doenças relacionadas ao trabalho de notificação compulsória são registrados no SINAN, alimentando a VIGILÂNCIA epidemiológica em saúde do trabalhador — o que permite identificar riscos, dimensionar o problema e orientar políticas públicas e ações do CEREST. A CAT formaliza para fins previdenciários; o SINAN é o instrumento de vigilância. Diferenciar os instrumentos é o ponto.",
+    tags: ["SINAN", "notificação", "vigilância"]
+  },
 ];
 
 /* ============================ FLASHCARDS ============================ */
@@ -1068,4 +1637,4 @@ const FLASHCARDS = [
 ];
 
 // Exporta para o app
-window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS };
+window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES };

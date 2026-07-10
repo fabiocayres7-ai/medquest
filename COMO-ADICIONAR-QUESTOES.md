@@ -67,7 +67,45 @@ Dentro da lista `const FLASHCARDS = [ ... ]`:
 
 ---
 
-## 4) Testar se não quebrou
+## 3.1) IMPORTANTE — o campo `topic` e o Plano de Estudos
+
+As questões **só aparecem quando o tema está marcado como estudado** no **Plano de Estudos**.
+Para o tema aparecer no plano, o `topic` da questão deve existir na lista **SYLLABUS** (topo do `content.js`).
+
+- Se você usar um `topic` que **já está** no SYLLABUS, pronto — a questão entra naquele tema.
+- Se criar um `topic` **novo**, adicione-o também no SYLLABUS, na disciplina certa:
+
+```js
+const SYLLABUS = {
+  mad: [
+    { phase:"N1", topic:"Sepse" },
+    { phase:"N1", topic:"Meu tema novo" },   // <- adicione aqui
+    ...
+  ],
+  ...
+};
+```
+
+> Se esquecer, a questão ainda funciona, mas o tema aparece no fim da lista do plano automaticamente (o app inclui temas de questões que não estão no SYLLABUS). Colocar no SYLLABUS só serve para controlar a ORDEM e a fase (N1/N2).
+
+## 4) Adicionar um RESUMO
+
+No bloco **SUMMARIES** (topo do `content.js`), a chave é `"disciplina::tema"` (o mesmo `topic`):
+
+```js
+const SUMMARIES = {
+  "mad::Sepse":
+    "Definição...\n"+
+    "• ponto 1\n"+
+    "• ponto 2",
+  "cirurgia::Fios e suturas":
+    "Absorvíveis: ...\nInabsorvíveis: ...",
+};
+```
+
+Use `\n` para quebrar linha e `+` para juntar linhas (como no exemplo). O resumo aparece na aba **📖 Resumos**, dentro da disciplina, e um marcador 📖 surge no Plano.
+
+## 5) Testar se não quebrou
 
 Se o app abrir em branco depois de editar, provavelmente faltou uma vírgula ou aspas.
 Abra o arquivo, procure o bloco que você mexeu e confira. No navegador, aperte **F12 → Console**

@@ -73,7 +73,9 @@ Dica: dividam as disciplinas entre o grupo e cada um cria 10 questões da sua pa
 ---
 
 ## 🎮 O que já vem pronto
-- **63 questões** de raciocínio clínico (com vinheta + explicação do porquê de cada alternativa) e **61 flashcards**, nas 8 disciplinas do semestre (com ênfase em MAD II e Prática Clínica).
+- **91 questões** de raciocínio clínico estilo prova de residência (vinheta + explicação do porquê de cada alternativa; mais da metade em nível "desafio") e **61 flashcards**, nas 8 disciplinas.
+- **Plano de Estudos**: marque cada tema conforme estuda — **as questões só caem dos temas marcados**. 82 temas mapeados ao conteúdo real do semestre.
+- **Resumos**: aba com resumos objetivos por tema (vá adicionando os seus em `js/content.js`).
 - **Níveis:** Calouro → Interno → Plantonista → Residente → Preceptor → Especialista → Chefe de Equipe → Professor → Livre-Docente → **Lenda da Mandic**.
 - **XP** por acerto (mais para questões difíceis) e por revisão de flashcard; **bônus de streak**.
 - **Streak diário**, **missões diárias**, **12 conquistas**, **barras de progresso por disciplina**.
