@@ -2447,5 +2447,14 @@ const IMAGES = [
     explanation:"Icterícia + colúria + acolia + prurido = padrão COLESTÁTICO (bilirrubina direta, FA e GGT elevadas). Causas: cálculo no colédoco, tumor de via biliar ou de cabeça de pâncreas." },
 ];
 
+/* ============================ LINKS por tema (vídeos/áudios/leituras) ============================
+   Chave: "disc::topic" (mesmo do plano). Cada item: {label, url}. Vão aparecer no resumo do tema.
+   Adicione os seus (ex.: aula no YouTube). Exemplo abaixo — troque/adicione à vontade.
+   ================================================================================================ */
+const LINKS = {
+  // "mad::Sepse": [ {label:"Vídeo: fisiopatologia da sepse", url:"https://youtu.be/..."} ],
+  // "pratica::Vesícula e vias biliares": [ {label:"Aula: colelitíase", url:"https://..."} ],
+};
+
 // Exporta para o app
-window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA, IMAGES };
+window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA, IMAGES, LINKS };

@@ -84,6 +84,7 @@ Dica: dividam as disciplinas entre o grupo e cada um cria 10 questões da sua pa
 - **Ranking semanal** além do total, com meta da semana.
 - **Questão do dia**, **revisão inteligente** (curva do esquecimento), **compartilhar progresso** (imagem), **tema claro/escuro**.
 - **Lembrete diário** (notificação no horário escolhido), **estatística de tempo de estudo** (foco + questões) e **painel de progresso da turma** (nível, plano, acerto de cada colega).
+- **Metas inteligentes** (questões/dia até a prova), **liga semanal** (divisões Bronze→Mestre), **revisão de véspera**, **pegadinhas** (difíceis que você errou), **flashcards automáticos dos erros**, **"por que errei"** (padrões), **links por tema**, **tamanho de fonte** (acessibilidade).
 - **12 níveis** com curva exigente: Calouro → Interno → Plantonista → Residente R1/R2 → Preceptor → Especialista → Chefe de Equipe → Professor → Livre-Docente → Notório Saber → **Lenda da Mandic** (35 000 XP).
 - **XP** por acerto (mais para questões difíceis) e por revisão de flashcard; **bônus de streak**.
 - **13 conquistas com 5 patamares cada** (🥉 Bronze → 🥈 Prata → 🥇 Ouro → 🏆 Platina → 💠 Diamante) — 65 patamares para colecionar.

@@ -5,7 +5,7 @@
    ============================================================ */
 (function(){
 "use strict";
-const { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA, IMAGES } = window.MEDQUEST_DATA;
+const { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA, IMAGES, LINKS } = window.MEDQUEST_DATA;
 const CFG = window.MEDQUEST_CONFIG;
 const LS_KEY = "medquest5_state_v1";
 
@@ -91,9 +91,10 @@ function freshState(){
     history:{},                   // {"AAAA-MM-DD": {xp,answered,correct}} — evolução diária
     notes:{},                     // {"disc::topic": "anotação pessoal"}
     duels:[],                     // histórico de duelos [{opp,my,their,res,date}]
-    settings:{pomoFocus:25, pomoBreak:5, pomoGoal:4, theme:"dark",
+    settings:{pomoFocus:25, pomoBreak:5, pomoGoal:4, theme:"dark", fontScale:1,
               reminder:{enabled:false, time:"19:00", lastDate:""}}, // config
     dailyQ:{date:"", done:false, correct:false}, // questão do dia
+    errReasons:{sabia:0, conceito:0, atencao:0}, // "por que errei"
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
@@ -493,6 +494,19 @@ function viewHome(m){
   }
   m.appendChild(dqc);
 
+  // Meta inteligente até a prova + divisão semanal
+  const sg=smartDailyGoal();
+  const dv=division(wk);
+  const mg=el("div","card mt");
+  let mgHtml=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <b>${dv.cur.em} Divisão ${dv.cur.n}</b><span class="muted small">${dv.next?`faltam ${dv.toNext} XP p/ ${dv.next.n}`:"divisão máxima!"}</span></div>`;
+  if(sg){ const doneToday=(S.history[todayStr()]||{}).answered||0;
+    mgHtml+=`<div class="small mt">🎯 Meta até a <b>${sg.phase}</b> (${sg.days} dias): <b style="color:var(--warn)">${sg.perDay}</b> questões/dia · ${sg.remaining} restantes</div>
+      <div class="prog" style="margin-top:6px"><span style="width:${Math.min(100,Math.round(doneToday/Math.max(1,sg.perDay)*100))}%;background:var(--grad)"></span></div>
+      <div class="muted small mt">Hoje: ${doneToday}/${sg.perDay} da meta</div>`;
+  }
+  mg.innerHTML=mgHtml; m.appendChild(mg);
+
   // Praticar
   m.appendChild(el("div","sectitle","Praticar"));
   const acts=el("div","btnrow");
@@ -501,12 +515,17 @@ function viewHome(m){
   m.appendChild(acts);
   const actsR=el("div","btnrow mt");
   const br=el("button","btn ghost","🧠 Revisão inteligente"); br.onclick=()=>startSmartReview(15); actsR.appendChild(br);
+  const bv=el("button","btn ghost",`🎓 Revisão de véspera (${(nextExam()||{}).phase||"prova"})`); bv.onclick=startExamReview; actsR.appendChild(bv);
   m.appendChild(actsR);
   const acts2=el("div","btnrow mt");
   const ec=errorsCount(), bc=bookmarksCount();
   const b3=el("button","btn ghost",`🔁 Refazer erros${ec?` (${ec})`:""}`); b3.onclick=()=>startSession({source:"errors",n:20}); if(!ec)b3.style.opacity=".6"; acts2.appendChild(b3);
   const b4=el("button","btn ghost",`⭐ Marcadas${bc?` (${bc})`:""}`); b4.onclick=()=>startSession({source:"bookmarks",n:Math.max(bc,1)}); if(!bc)b4.style.opacity=".6"; acts2.appendChild(b4);
   m.appendChild(acts2);
+  const acts2b=el("div","btnrow mt");
+  const bp=el("button","btn ghost","🎯 Pegadinhas"); bp.onclick=startPegadinhas; acts2b.appendChild(bp);
+  const bef=el("button","btn ghost","🧩 Cards dos meus erros"); bef.onclick=startErrorCards; acts2b.appendChild(bef);
+  m.appendChild(acts2b);
   const acts3=el("div","btnrow mt");
   const b5=el("button","btn ghost","🃏 Flashcards"); b5.onclick=()=>go("flash"); acts3.appendChild(b5);
   const b6=el("button","btn ghost","🖼️ Imagens"); b6.onclick=()=>go("images"); acts3.appendChild(b6);
@@ -670,9 +689,10 @@ function viewResumos(m){
     <div class="muted small mt">${withS}/${total} temas com resumo · ${withN} anotações suas</div>`;
   m.appendChild(head);
 
+  const hasLinks=(disc,topic)=>{ const l=(LINKS||{})[tkey(disc,topic)]; return l&&l.length; };
   for(const disc in DISCIPLINES){
     const d=DISCIPLINES[disc];
-    const topics=planTopics(disc).filter(t=>hasSummary(disc,t.topic)||hasNote(disc,t.topic));
+    const topics=planTopics(disc).filter(t=>hasSummary(disc,t.topic)||hasNote(disc,t.topic)||hasLinks(disc,t.topic));
     if(!topics.length) continue;
     const card=el("div","card mt");
     card.appendChild(el("div","",`<b>${d.icon} ${esc(d.name)}</b>`));
@@ -680,12 +700,14 @@ function viewResumos(m){
       const has=hasSummary(disc,t.topic);
       const item=el("div"); item.style.cssText="border-top:1px solid var(--stroke);margin-top:10px;padding-top:10px";
       const btn=el("button","opt"); btn.style.marginBottom="0";
-      btn.innerHTML=`${has?"📖":"📝"} <b>${esc(t.topic)}</b> ${hasNote(disc,t.topic)?"<span class='muted small'>✍️</span>":""} <span class="pill" style="float:right">${t.phase}</span>`;
+      btn.innerHTML=`${has?"📖":"📝"} <b>${esc(t.topic)}</b> ${hasNote(disc,t.topic)?"<span class='muted small'>✍️</span>":""}${hasLinks(disc,t.topic)?" <span class='muted small'>🔗</span>":""} <span class="pill" style="float:right">${t.phase}</span>`;
       const body=el("div","explain mt hidden"); if(has) body.innerHTML=esc(SUMMARIES[tkey(disc,t.topic)]).replace(/\n/g,"<br>");
       const noteBox=noteEditor(disc,t.topic);
       const nbtn=el("button","btn ghost sm mt","✍️ Anotar"); nbtn.onclick=()=>noteBox.classList.toggle("hidden");
       btn.onclick=()=>{ if(has) body.classList.toggle("hidden"); else noteBox.classList.toggle("hidden"); };
-      item.appendChild(btn); if(has) item.appendChild(body); item.appendChild(nbtn); item.appendChild(noteBox);
+      item.appendChild(btn); if(has) item.appendChild(body);
+      if(hasLinks(disc,t.topic)){ const lw=el("div","mt"); (LINKS[tkey(disc,t.topic)]||[]).forEach(lk=>{ const a=el("a","chip"); a.href=lk.url; a.target="_blank"; a.rel="noopener"; a.textContent="🔗 "+lk.label; a.style.marginRight="6px"; a.style.display="inline-block"; a.style.marginTop="6px"; lw.appendChild(a); }); item.appendChild(lw); }
+      item.appendChild(nbtn); item.appendChild(noteBox);
       card.appendChild(item);
     });
     m.appendChild(card);
@@ -789,6 +811,47 @@ function startDaily(){
     total:1, answers:[null], scored:false, endAt:null, daily:true};
   go("quiz");
 }
+// ---- Próxima prova / metas inteligentes / divisões ----
+function nextExam(){
+  const ex=CFG.EXAMS||{}; const dd=(s)=>{ if(!s)return null; const t=new Date(s+"T00:00:00"); if(isNaN(t))return null; return Math.ceil((t-new Date())/86400000); };
+  const n1=dd(ex.N1), n2=dd(ex.N2);
+  if(n1!=null && n1>=0) return {phase:"N1", days:n1};
+  if(n2!=null && n2>=0) return {phase:"N2", days:n2};
+  return null;
+}
+function smartDailyGoal(){
+  const ne=nextExam(); if(!ne) return null;
+  const remaining=unlockedQuestions(null).filter(q=>q.phase===ne.phase && !(S.seenQ[q.id]&&S.seenQ[q.id].correct)).length;
+  return {phase:ne.phase, days:ne.days, remaining, perDay:Math.ceil(remaining/Math.max(1,ne.days))};
+}
+const DIVISIONS=[{n:"Bronze",em:"🥉",min:0},{n:"Prata",em:"🥈",min:150},{n:"Ouro",em:"🥇",min:400},{n:"Platina",em:"🏆",min:800},{n:"Diamante",em:"💠",min:1400},{n:"Mestre",em:"👑",min:2200}];
+function division(xp){ let i=0; for(let k=0;k<DIVISIONS.length;k++) if(xp>=DIVISIONS[k].min) i=k; return {cur:DIVISIONS[i], next:DIVISIONS[i+1]||null, toNext:DIVISIONS[i+1]?DIVISIONS[i+1].min-xp:0}; }
+// ---- Revisão de véspera (fase da próxima prova) ----
+function startExamReview(){
+  const ne=nextExam(); const phase=ne?ne.phase:"N1";
+  const pool=unlockedQuestions(null).filter(q=>q.phase===phase);
+  if(!pool.length){ toast("Libere temas de "+phase+" no Plano 📋"); go("plan"); return; }
+  const ranked=pool.slice().sort((a,b)=>reviewScore(b)-reviewScore(a)).slice(0,20);
+  quiz={pool:shuffle(ranked), idx:0, correctCount:0, answered:false, mode:"exam", source:"vespera", exam:true,
+    total:ranked.length, answers:new Array(ranked.length).fill(null), scored:false, endAt:Date.now()+25*60000};
+  go("quiz");
+}
+// ---- Pegadinhas (difíceis que você errou) ----
+function startPegadinhas(){
+  const all=QUESTIONS.filter(q=>S.errors[q.id] && q.difficulty===3);
+  if(!all.length){ toast("Nenhuma pegadinha por ora (questões difíceis que você errou)."); return; }
+  const pool=shuffle(all).slice(0,15);
+  quiz={pool, idx:0, correctCount:0, answered:false, mode:"quiz", source:"pegadinhas", exam:false,
+    total:pool.length, answers:new Array(pool.length).fill(null), scored:false, endAt:null};
+  go("quiz");
+}
+// ---- Flashcards automáticos dos erros ----
+function startErrorCards(){
+  const cards=QUESTIONS.filter(q=>S.errors[q.id]).map(q=>({id:"e-"+q.id, discipline:q.discipline,
+    front:q.question, back:"✅ "+q.options[q.answer]+"\n\n"+q.explanation, auto:true}));
+  if(!cards.length){ toast("Sem erros pendentes — mandou bem! 🎉"); return; }
+  route="flash"; flash={pool:shuffle(cards), idx:0, flipped:false, auto:true}; render(); window.scrollTo(0,0);
+}
 
 function viewQuiz(m){
   if(quiz && !quiz.startedAt) quiz.startedAt=Date.now();
@@ -863,6 +926,15 @@ function answer(i,body,opts,q){
   body.appendChild(ex);
   if(quiz.daily && !dailyDone()){ const bonus=correct?50:15; addXP(bonus); S.dailyQ={date:todayStr(),done:true,correct};
     ex.innerHTML+=`<div class="mt" style="color:var(--gold);font-weight:700">🎯 Questão do dia! +${bonus} XP</div>`; }
+  if(!correct){
+    const rz=el("div","mt"); rz.innerHTML=`<div class="small muted mb">Por que você errou? (ajuda a ver seus padrões)</div>`;
+    const rrow=el("div","chiprow");
+    [["sabia","Não sabia"],["conceito","Troquei conceito"],["atencao","Desatenção"]].forEach(([k,lb])=>{
+      const c=el("button","chip",lb); c.onclick=()=>{ S.errReasons[k]=(S.errReasons[k]||0)+1; save(); [...rrow.children].forEach(x=>x.classList.remove("on")); c.classList.add("on"); toast("Anotado 👍"); };
+      rrow.appendChild(c);
+    });
+    rz.appendChild(rrow); body.appendChild(rz);
+  }
   const nav=el("div","btnrow mt");
   const nb=el("button","btn",quiz.idx+1>=quiz.pool.length?"Ver resultado →":"Próxima →");
   nb.onclick=()=>{ quiz.idx++; quiz.answered=false; render(); window.scrollTo(0,0); };
@@ -963,17 +1035,21 @@ function viewFlash(m){
   const card=flash.pool[flash.idx];
   const d=DISCIPLINES[card.discipline];
   const head=el("div","card");
-  head.innerHTML=`<div style="display:flex;justify-content:space-between"><span class="pill">${d.icon} ${esc(d.name)}</span><span class="muted small">${flash.idx+1}/${flash.pool.length} · vencidos</span></div>`;
+  head.innerHTML=`<div style="display:flex;justify-content:space-between"><span class="pill">${d.icon} ${esc(d.name)}</span><span class="muted small">${flash.idx+1}/${flash.pool.length} · ${flash.auto?"meus erros":"vencidos"}</span></div>`;
   m.appendChild(head);
 
   const fc=el("div","flash mt"+(flash.flipped?" flipped":""));
   fc.innerHTML=`<div class="flash-inner">
-    <div class="flash-face"><span class="hint">Pergunta</span><div class="txt">${esc(card.front)}</div><span class="hint" style="top:auto;bottom:14px;left:16px">toque para virar</span></div>
-    <div class="flash-face flash-back"><span class="hint">Resposta</span><div class="txt">${esc(card.back)}</div></div></div>`;
+    <div class="flash-face"><span class="hint">${flash.auto?"Questão que errei":"Pergunta"}</span><div class="txt" style="${flash.auto?"font-size:16px":""}">${esc(card.front)}</div><span class="hint" style="top:auto;bottom:14px;left:16px">toque para virar</span></div>
+    <div class="flash-face flash-back"><span class="hint">Resposta</span><div class="txt" style="${flash.auto?"font-size:15px;white-space:pre-line":""}">${esc(card.back)}</div></div></div>`;
   fc.onclick=()=>{ flash.flipped=!flash.flipped; render(); };
   m.appendChild(fc);
 
-  if(flash.flipped){
+  if(flash.flipped && flash.auto){
+    const nx=el("button","btn block mt", flash.idx+1>=flash.pool.length?"Concluir":"Próximo →");
+    nx.onclick=()=>{ S.stats.reviews=(S.stats.reviews||0)+1; touchStreak(); addXP(2); save(); renderTopbar(); flash.idx++; flash.flipped=false; render(); window.scrollTo(0,0); };
+    m.appendChild(nx);
+  } else if(flash.flipped){
     const srs=el("div","srsrow mt");
     const opts=[["srs-again","Errei","1 dia"],["srs-hard","Difícil","curto"],["srs-good","Bom","+"],["srs-easy","Fácil","++"]];
     opts.forEach(([cls,lb,sub],q)=>{
@@ -1287,6 +1363,35 @@ function viewBadges(m){
   rcard.appendChild(rsave);
   m.appendChild(rcard);
 
+  // Análise dos erros ("por que errei")
+  const er=S.errReasons||{sabia:0,conceito:0,atencao:0};
+  const erTot=(er.sabia||0)+(er.conceito||0)+(er.atencao||0);
+  if(erTot){
+    m.appendChild(el("div","sectitle","Por que você erra"));
+    const ecard=el("div","card");
+    const pctf=(v)=>Math.round((v||0)/erTot*100);
+    ecard.innerHTML=`<p class="muted small mb">Padrão dos seus erros marcados (${erTot}):</p>`;
+    [["Não sabia o conteúdo","sabia","var(--bad)"],["Troquei conceito","conceito","var(--warn)"],["Desatenção","atencao","var(--info)"]].forEach(([lb,k,cl])=>{
+      const row=el("div","mt"); row.innerHTML=`<div class="small" style="display:flex;justify-content:space-between"><span>${lb}</span><span>${pctf(er[k])}%</span></div>
+        <div class="prog" style="margin-top:4px"><span style="width:${pctf(er[k])}%;background:${cl}"></span></div>`;
+      ecard.appendChild(row);
+    });
+    ecard.appendChild(el("div","muted small mt","Dica: muita 'desatenção' → leia o enunciado 2x. Muito 'não sabia' → volte ao resumo do tema."));
+    m.appendChild(ecard);
+  }
+
+  // Ajustes / acessibilidade
+  m.appendChild(el("div","sectitle","Ajustes"));
+  const acard=el("div","card");
+  acard.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+     <div><b>Tamanho da fonte</b><div class="muted small">Deixe o texto maior ou menor</div></div></div>`;
+  const frow=el("div","btnrow mt");
+  const fminus=el("button","btn ghost sm","A−"); fminus.onclick=()=>{ bumpFont(-1); render(); };
+  const flabel=el("span","chip",Math.round(((S.settings&&S.settings.fontScale)||1)*100)+"%");
+  const fplus=el("button","btn ghost sm","A+"); fplus.onclick=()=>{ bumpFont(1); render(); };
+  frow.append(fminus,flabel,fplus); acard.appendChild(frow);
+  m.appendChild(acard);
+
   const grid=el("div","grid cols2 mt");
   ACHIEVEMENTS.forEach(a=>{
     const cur=S.ach[a.id]||0, val=a.metric(S);
@@ -1561,6 +1666,8 @@ function applyTheme(){
   const tc=document.querySelector('meta[name="theme-color"]'); if(tc) tc.setAttribute("content", light?"#f4f6fb":"#080b16");
 }
 function toggleTheme(){ if(!S.settings) S.settings={}; S.settings.theme=(S.settings.theme==="light")?"dark":"light"; save(); applyTheme(); }
+function applyFontScale(){ const s=(S.settings&&S.settings.fontScale)||1; try{ document.body.style.zoom=s; }catch(e){} }
+function bumpFont(dir){ if(!S.settings) S.settings={}; let s=((S.settings.fontScale||1)+dir*0.1); s=Math.max(0.9,Math.min(1.4,Math.round(s*10)/10)); S.settings.fontScale=s; save(); applyFontScale(); }
 
 /* ---------- Lembrete diário ---------- */
 function reminderTick(){
@@ -1579,6 +1686,7 @@ function initReminder(){ try{ reminderTick(); }catch(e){} setInterval(()=>{ try{
 /* ---------- Boot ---------- */
 pomoRender();
 applyTheme();
+applyFontScale();
 initReminder();
 const _sb=$("#searchbtn"); if(_sb) _sb.onclick=openSearch;
 const _tb=$("#themebtn"); if(_tb) _tb.onclick=toggleTheme;
