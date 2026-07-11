@@ -93,7 +93,7 @@ code{background:var(--surface-3);padding:1px 6px;border-radius:6px;font-size:.9e
   transition:width .7s cubic-bezier(.22,1,.36,1);position:relative;box-shadow:0 0 18px rgba(124,140,255,.55)}
 .bar > span::after{content:"";position:absolute;inset:0;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
-  transform:translateX(-100%);animation:shine 2.6s ease-in-out infinite}
+  transform:translateX(-100%);animation:shine 2.4s ease-in-out 1.2s 2}
 @keyframes shine{to{transform:translateX(220%)}}
 
 /* ---------- Navegação ---------- */
