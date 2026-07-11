@@ -53,6 +53,10 @@ const SYLLABUS = {
     { phase:"N2", topic:"Vasculites" },
     { phase:"N2", topic:"Imunoensaios" },
     { phase:"N2", topic:"Imunoensaios — método" },
+    { phase:"N2", topic:"Doenças autoinflamatórias" },
+    { phase:"N2", topic:"Artrite reumatoide" },
+    { phase:"N2", topic:"Espondiloartrites e HLA-B27" },
+    { phase:"N2", topic:"Febre reumática" },
   ],
   pratica: [
     { phase:"N1", topic:"Patologia do esôfago" },
@@ -87,6 +91,8 @@ const SYLLABUS = {
     { phase:"N2", topic:"Excreção renal" },
     { phase:"N2", topic:"Farmacodinâmica — receptores" },
     { phase:"N2", topic:"Janela terapêutica e monitorização" },
+    { phase:"N2", topic:"Farmacologia autonômica" },
+    { phase:"N2", topic:"Antimicrobianos — escolha" },
   ],
   rci: [
     { phase:"N1", topic:"Úlcera péptica" },
@@ -109,6 +115,8 @@ const SYLLABUS = {
     { phase:"N1", topic:"Tempos cirúrgicos" },
     { phase:"N1", topic:"Cicatrização" },
     { phase:"N1", topic:"Ambiente e paramentação" },
+    { phase:"N1", topic:"Áreas do centro cirúrgico" },
+    { phase:"N1", topic:"Instrumental cirúrgico" },
     { phase:"N2", topic:"Fios e suturas" },
     { phase:"N2", topic:"Nós e técnicas de sutura" },
   ],
@@ -206,6 +214,42 @@ const SUMMARIES = {
     "Por instrumento: INCISA (gume, bordas nítidas, sem pontes) · CONTUSA (contundente, bordas irregulares, pontes) ·\n"+
     "PERFUROINCISA (ponta+gume, faca) · PERFUROCONTUSA (PAF) · CORTOCONTUSA (gume+peso, machado).\n"+
     "PAF entrada: menor, orla de escoriação, tatuagem se curta distância. Saída: maior, evertida, sem orla.",
+
+  "mad::Imunologia dos tumores":
+    "IMUNOEDIÇÃO (3 E's): Eliminação (imunovigilância mata células transformadas) → Equilíbrio → Escape (variantes evadem).\n"+
+    "Antígenos: TSA (específicos de tumor) e TAA (associados, também em tecido normal).\n"+
+    "Escape: perda de MHC-I, PD-L1 (exaustão de T), Treg/citocinas imunossupressoras. Alvo da imunoterapia (anti-PD1/anti-CTLA4).",
+  "mad::Artrite reumatoide":
+    "Autoimune, poliartrite SIMÉTRICA de pequenas articulações + rigidez matinal > 1h + erosões.\n"+
+    "Mediadores: CD4, macrófagos, TNF-α, IL-1, IL-6 → sinovite/pannus. Marcadores: anti-CCP (mais ESPECÍFICO) e FR (sensível, inespecífico).\n"+
+    "Tratamento: metotrexato e biológicos (anti-TNF etc.).",
+  "mad::Febre reumática":
+    "Reação autoimune pós-faringite por Streptococcus pyogenes (grupo A) por MIMETISMO MOLECULAR.\n"+
+    "Alvos: coração (valvulite → lesão mitral), articulações (poliartrite migratória), SNC (coreia de Sydenham), pele.\n"+
+    "Critérios de Jones. Prevenção: tratar a faringite estreptocócica (penicilina).",
+  "terap::Farmacologia autonômica":
+    "SIMPÁTICO: alfa-1 (vasoconstrição), beta-1 (coração ↑FC/força), beta-2 (broncodilatação, vasodilatação musc. esquelética).\n"+
+    "Adrenalina age em alfa+beta (beta-2 dilata musc. esquelética); noradrenalina predomina alfa (vasoconstrição).\n"+
+    "PARASSIMPÁTICO: ACh em receptores muscarínicos. Anticolinesterásico (piridostigmina) ↑ACh na fenda → miastenia.\n"+
+    "Feocromocitoma: bloquear ALFA antes do beta.",
+  "terap::Antimicrobianos — escolha":
+    "Escolha = espectro (microbiologia) + segurança (paciente) + via.\n"+
+    "Estreptococo/pneumococo sensível → penicilina/amoxicilina. Alergia grave a betalactâmico → macrolídeo (evitar cefalosporina por reação cruzada).\n"+
+    "Gestante: evitar tetraciclina (dentes/ossos) e fluoroquinolona (cartilagem); penicilina é segura. Criança: evitar tetraciclina.",
+  "cirurgia::Áreas do centro cirúrgico":
+    "IRRESTRITA: acesso livre, roupa comum (recepção/vestiário).\n"+
+    "SEMIRRESTRITA: circulação interna; exige pijama privativo e touca.\n"+
+    "RESTRITA: salas cirúrgicas; exige pijama privativo, TOUCA e MÁSCARA. Fluxo do limpo para o sujo.",
+  "cirurgia::Instrumental cirúrgico":
+    "Por função: DIÉRESE (bisturi, tesoura) · PREENSÃO (pinça anatômica, dente de rato, Allis — tração de tecido) ·\n"+
+    "HEMOSTASIA (Kelly, Halsted/mosquito) · SÍNTESE (porta-agulhas) · ESPECIAIS/AFASTADORES (Farabeuf, Gosset) · CAMPOS (Backhaus).",
+  "pig::Financiamento em saúde":
+    "Fontes: governo, empresas e famílias (pagamento direto/out of pocket).\n"+
+    "SUS: financiamento TRIPARTITE (União/estados/municípios). Suplementar (~26% da população) regulado pela ANS.\n"+
+    "Out of pocket recai sobretudo em MEDICAMENTOS e artigos médicos. Queda de beneficiários pós-2015 ligada ao desemprego.",
+  "pig::SUS e regulação":
+    "Princípios: universalidade, integralidade, equidade; organização: descentralização, regionalização, hierarquização, participação social.\n"+
+    "APS = porta de entrada e ordenadora da rede (linha de cuidado). ANS regula a saúde suplementar; ANVISA, a vigilância sanitária.",
 };
 
 /* ============================ QUESTÕES ============================ */
@@ -1610,6 +1654,419 @@ const QUESTIONS = [
     explanation: "Agravos e doenças relacionadas ao trabalho de notificação compulsória são registrados no SINAN, alimentando a VIGILÂNCIA epidemiológica em saúde do trabalhador — o que permite identificar riscos, dimensionar o problema e orientar políticas públicas e ações do CEREST. A CAT formaliza para fins previdenciários; o SINAN é o instrumento de vigilância. Diferenciar os instrumentos é o ponto.",
     tags: ["SINAN", "notificação", "vigilância"]
   },
+
+  /* ==================== LOTE PROVAS ANTIGAS + MATERIAIS (Mandic) ==================== */
+
+  /* ---- MAD II (provas N1/N2) ---- */
+  {
+    id: "madp01", discipline: "mad", phase: "N1", topic: "Sepse", difficulty: 3,
+    vignette: "Homem de 60 anos, hipertenso e diabético, com febre alta, taquicardia e confusão mental, é diagnosticado com sepse secundária a pneumonia comunitária e evolui com choque séptico (hipotensão persistente e disfunção de múltiplos órgãos).",
+    question: "Qual mecanismo imunológico é o MAIS relevante para o quadro apresentado?",
+    options: [
+      "Ativação descontrolada da resposta adaptativa, com aumento da resposta inflamatória e dano tecidual",
+      "Resposta inflamatória exacerbada mediada por citocinas, provocando vasodilatação e aumento da permeabilidade vascular",
+      "Liberação excessiva de mediadores anti-inflamatórios levando à inibição imune e progressão da infecção",
+      "Supressão do sistema imune permitindo multiplicação descontrolada do patógeno",
+      "Ativação isolada do complemento sem participação de citocinas"
+    ],
+    answer: 1,
+    explanation: "Na sepse/choque séptico, a resposta inflamatória sistêmica EXACERBADA (tempestade de citocinas: TNF-α, IL-1, IL-6) e a indução de óxido nítrico causam VASODILATAÇÃO e aumento da PERMEABILIDADE vascular → choque distributivo e disfunção orgânica. Há também componente anti-inflamatório compensatório, mas o motor da disfunção aguda é a resposta pró-inflamatória desregulada.",
+    tags: ["sepse", "citocinas", "choque"]
+  },
+  {
+    id: "madp02", discipline: "mad", phase: "N1", topic: "Sepse", difficulty: 3,
+    vignette: "Paciente com sepse grave evolui com coagulação intravascular disseminada (CID), com microtrombos em capilares de múltiplos órgãos. A disfunção endotelial é apontada como mecanismo central.",
+    question: "A disfunção endotelial na sepse contribui para a CID porque:",
+    options: [
+      "Reduz a expressão de moléculas de adesão, diminuindo o recrutamento de neutrófilos",
+      "Ativa e lesa as células endoteliais, levando à expressão de moléculas pró-coagulantes e aumento da permeabilidade vascular",
+      "Suprime os fatores de coagulação, prevenindo a formação de coágulos",
+      "Aumenta a produção de mediadores anti-inflamatórios que restauram a perfusão",
+      "Bloqueia a via do fator tecidual, impedindo trombose"
+    ],
+    answer: 1,
+    explanation: "Na sepse, o endotélio ativado/lesado passa a expressar FATOR TECIDUAL e moléculas pró-coagulantes, reduz anticoagulantes naturais e aumenta a permeabilidade → trombose microvascular difusa (CID) com consumo de plaquetas e fatores, levando a isquemia orgânica e, paradoxalmente, sangramento. Ativação (não supressão) da coagulação é a chave.",
+    tags: ["CID", "endotélio", "fator tecidual"]
+  },
+  {
+    id: "madp03", discipline: "mad", phase: "N1", topic: "Imunologia dos tumores", difficulty: 3,
+    vignette: "Discussão sobre a relação entre o sistema imune e as neoplasias.",
+    question: "Sobre a imunologia dos tumores, assinale a afirmativa CORRETA:",
+    options: [
+      "Antígenos tumorais são sempre exclusivos das células neoplásicas, nunca presentes em células normais",
+      "A imunoedição envolve eliminação, equilíbrio e escape — e as neoplasias frequentemente desenvolvem estratégias para evadir a vigilância imune",
+      "O escape imunológico é obrigatório e ocorre em toda célula que sofre mutação, antes mesmo de virar câncer",
+      "O sistema imune não reconhece células tumorais",
+      "A imunoedição depende exclusivamente de linfócitos B e anticorpos"
+    ],
+    answer: 1,
+    explanation: "A IMUNOEDIÇÃO tem 3 fases: ELIMINAÇÃO (imunovigilância destrói células transformadas), EQUILÍBRIO e ESCAPE (variantes que evadem a resposta imune proliferam). Nem todo antígeno tumoral é exclusivo (há antígenos associados a tumores, também em tecidos normais), e o escape não é obrigatório em toda mutação. Base da imunoterapia (checkpoints).",
+    tags: ["imunoedição", "escape", "vigilância"]
+  },
+  {
+    id: "madp04", discipline: "mad", phase: "N1", topic: "Terapia das doenças imunológicas", difficulty: 3,
+    vignette: "Revisão dos fármacos usados nas doenças imunológicas: AINEs, corticoides, imunossupressores e biológicos.",
+    question: "Assinale a alternativa CORRETA sobre esses fármacos:",
+    options: [
+      "AINEs inibem a fosfolipase A2, bloqueando toda a cascata do ácido araquidônico",
+      "Anticorpos monoclonais podem inibir citocinas pró-inflamatórias (ex.: anti-TNF), sendo úteis em doenças autoimunes",
+      "Omalizumabe bloqueia a ciclo-oxigenase, reduzindo prostaglandinas",
+      "Glicocorticoides não têm utilidade por via inalatória na asma",
+      "AINEs seletivos para COX-2 aumentam a proteção gástrica sem qualquer risco cardiovascular"
+    ],
+    answer: 1,
+    explanation: "Anticorpos monoclonais miram alvos específicos da imunopatologia — ex.: anti-TNF (infliximabe), anti-IL-6, anti-IgE (omalizumabe, que neutraliza IgE, NÃO a COX). AINEs inibem a COX (não a fosfolipase A2 — essa é inibida pelos corticoides). Corticoide inalatório é pilar da asma. Coxibes aumentam risco trombótico. Reconhecer os mecanismos por classe é o objetivo.",
+    tags: ["biológicos", "anti-TNF", "omalizumabe"]
+  },
+  {
+    id: "madp05", discipline: "mad", phase: "N2", topic: "Rinite alérgica", difficulty: 3,
+    vignette: "Paciente de 23 anos com prurido nasal, coriza, espirros e obstrução nasal por rinite alérgica.",
+    question: "Qual tratamento atua de forma MAIS AMPLA sobre todos os sintomas, por interferir em múltiplos pontos da cascata inflamatória?",
+    options: [
+      "Anti-histamínico H1, que bloqueia tanto mastócitos quanto eosinófilos",
+      "Corticoide nasal, que reduz a inflamação em vários pontos (mastócitos, mediadores neoformados e eosinófilos)",
+      "Anti-leucotrieno, que bloqueia o único mediador relevante na rinite",
+      "Descongestionante nasal de uso contínuo",
+      "Antibiótico tópico nasal"
+    ],
+    answer: 1,
+    explanation: "O CORTICOIDE NASAL é o mais eficaz e amplo: reduz a inflamação alérgica em múltiplos níveis (recrutamento e ativação de eosinófilos, mediadores neoformados, edema), controlando obstrução, prurido, espirros e coriza. Anti-histamínicos atuam sobretudo na histamina (menos na obstrução); anti-leucotrienos são adjuvantes; descongestionante contínuo causa rinite medicamentosa.",
+    tags: ["rinite", "corticoide nasal", "eosinófilo"]
+  },
+  {
+    id: "madp06", discipline: "mad", phase: "N2", topic: "Doenças autoinflamatórias", difficulty: 3,
+    vignette: "Em discussão de caso, questiona-se por que as síndromes autoinflamatórias diferem das doenças autoimunes clássicas.",
+    question: "Qual alternativa descreve corretamente essa diferença fisiopatológica?",
+    options: [
+      "Autoinflamatórias são mediadas por linfócitos T autorreativos; autoimunes dependem da imunidade inata",
+      "Autoinflamatórias decorrem de ativação descontrolada da imunidade INATA (ex.: via inflamassoma), sem autoanticorpos; autoimunes envolvem linfócitos T e B autorreativos",
+      "Ambas produzem autoanticorpos e dependem de perda de tolerância central",
+      "Autoimunes têm mutações em genes de citocinas; autoinflamatórias são por antígenos ambientais",
+      "Não há diferença fisiopatológica entre elas"
+    ],
+    answer: 1,
+    explanation: "Doenças AUTOINFLAMATÓRIAS (ex.: febre familiar do Mediterrâneo) resultam de ativação desregulada da imunidade INATA — muitas por disfunção do INFLAMASSOMA e excesso de IL-1 — SEM autoanticorpos nem autorreatividade de linfócitos. As AUTOIMUNES envolvem perda de tolerância com linfócitos T/B autorreativos e autoanticorpos. Distinção conceitual cobrada.",
+    tags: ["autoinflamatória", "inflamassoma", "IL-1"]
+  },
+  {
+    id: "madp07", discipline: "mad", phase: "N2", topic: "Espondiloartrites e HLA-B27", difficulty: 2,
+    vignette: "Homem jovem com dor lombar inflamatória (pior em repouso, melhora com exercício), rigidez matinal prolongada e limitação progressiva da coluna.",
+    question: "Sobre a espondilite anquilosante, assinale a correta:",
+    options: [
+      "Associa-se ao HLA-DR4 e cursa com FAN positivo",
+      "Associa-se ao HLA-B27, com inflamação entesítica e fusão progressiva das sacroilíacas e da coluna",
+      "É causada por autoanticorpos anti-dsDNA",
+      "É uma vasculite de grandes vasos",
+      "Acomete predominantemente pequenas articulações das mãos com anti-CCP positivo"
+    ],
+    answer: 1,
+    explanation: "A espondilite anquilosante é uma espondiloartrite soronegativa (FAN/FR negativos) fortemente associada ao HLA-B27, com ENTESITE (inflamação da inserção de tendões/ligamentos), sacroileíte e anquilose progressiva ('coluna em bambu'). Anti-CCP e mãos são da artrite reumatoide; anti-dsDNA é do LES.",
+    tags: ["espondilite", "HLA-B27", "entesite"]
+  },
+  {
+    id: "madp08", discipline: "mad", phase: "N2", topic: "Artrite reumatoide", difficulty: 2,
+    vignette: "Mulher de 45 anos com poliartrite simétrica de pequenas articulações das mãos, rigidez matinal > 1 h e erosões ósseas.",
+    question: "Sobre a artrite reumatoide, é correto afirmar:",
+    options: [
+      "É mediada por linfócitos T CD4, macrófagos e citocinas (TNF-α, IL-1, IL-6), sendo o anti-CCP o marcador mais específico",
+      "O fator reumatoide é 100% específico para a doença",
+      "É uma doença autoinflamatória sem participação de linfócitos",
+      "O anti-dsDNA é o autoanticorpo mais específico",
+      "Não responde a terapia anti-TNF"
+    ],
+    answer: 0,
+    explanation: "A AR é autoimune, mediada por CD4, macrófagos e citocinas pró-inflamatórias (TNF-α, IL-1, IL-6) → sinovite e erosão. O ANTI-CCP é o marcador mais ESPECÍFICO (o fator reumatoide é sensível, porém inespecífico). Responde a anti-TNF e outros biológicos. Anti-dsDNA é do LES.",
+    tags: ["AR", "anti-CCP", "TNF"]
+  },
+  {
+    id: "madp09", discipline: "mad", phase: "N2", topic: "Febre reumática", difficulty: 3,
+    vignette: "Criança com poliartrite migratória, cardite e história de faringite por estreptococo semanas antes.",
+    question: "O mecanismo imunológico da febre reumática é:",
+    options: [
+      "Hipersensibilidade tipo I mediada por IgE",
+      "Mimetismo molecular entre antígenos do Streptococcus pyogenes e tecidos do hospedeiro (miocárdio e válvulas)",
+      "Deficiência de complemento",
+      "Infecção direta das válvulas pelo estreptococo",
+      "Autoinflamação por disfunção do inflamassoma"
+    ],
+    answer: 1,
+    explanation: "A febre reumática é uma reação autoimune por MIMETISMO MOLECULAR: anticorpos e linfócitos gerados contra o Streptococcus pyogenes (β-hemolítico do grupo A) reagem de forma cruzada com tecidos próprios — principalmente MIOCÁRDIO e VÁLVULAS cardíacas (valvulite → lesão mitral), articulações e SNC (coreia). Prevenção: tratar a faringite estreptocócica.",
+    tags: ["febre reumática", "mimetismo", "estreptococo"]
+  },
+
+  /* ---- Terapêutica I (prova N2 — autonômico e antimicrobianos) ---- */
+  {
+    id: "terp01", discipline: "terap", phase: "N2", topic: "Farmacologia autonômica", difficulty: 3,
+    vignette: "Mulher de 42 anos com hipertensão, distúrbios visuais e vômitos; VMA urinário aumentado e massa suprarrenal (feocromocitoma). Enquanto aguarda cirurgia, recebe um antagonista do receptor alfa-1 adrenérgico.",
+    question: "Qual efeito desse fármaco produz a redução desejada da pressão arterial?",
+    options: [
+      "Diminuição da frequência cardíaca por aumento do influxo de cálcio",
+      "Dilatação das arteríolas e das veias (bloqueio da vasoconstrição alfa-1)",
+      "Redução da força de contração do miocárdio",
+      "Dilatação seletiva dos vasos da musculatura esquelética",
+      "Aumento da liberação de noradrenalina"
+    ],
+    answer: 1,
+    explanation: "O receptor alfa-1 medeia a VASOCONSTRIÇÃO de arteríolas e veias. Bloqueá-lo (ex.: fentolamina/fenoxibenzamina, prazosina) causa VASODILATAÇÃO arterial e venosa → queda da resistência periférica e da PA. No feocromocitoma faz-se o bloqueio ALFA antes do beta (para evitar crise hipertensiva por estímulo alfa sem oposição).",
+    tags: ["feocromocitoma", "alfa-1", "vasodilatação"]
+  },
+  {
+    id: "terp02", discipline: "terap", phase: "N2", topic: "Farmacologia autonômica", difficulty: 2,
+    vignette: "Homem de 42 anos com miastenia gravis melhora a força muscular ao usar um inibidor da acetilcolinesterase (ex.: piridostigmina).",
+    question: "A base farmacológica dessa melhora é o aumento:",
+    options: [
+      "Da acetilcolina LIBERADA pelos neurônios motores",
+      "Dos níveis de acetilcolina na fenda sináptica da junção neuromuscular (menor degradação)",
+      "Do número de receptores de acetilcolina na junção",
+      "Da noradrenalina liberada pelos nervos motores",
+      "Do cálcio intracelular no músculo"
+    ],
+    answer: 1,
+    explanation: "Na miastenia há redução dos receptores de ACh (autoanticorpos). O inibidor da ACETILCOLINESTERASE impede a degradação da ACh na fenda → mais ACh disponível por mais tempo para os receptores remanescentes → melhora a transmissão neuromuscular e a força. Ele NÃO aumenta a liberação nem cria novos receptores.",
+    tags: ["miastenia", "anticolinesterásico", "ACh"]
+  },
+  {
+    id: "terp03", discipline: "terap", phase: "N2", topic: "Antimicrobianos — escolha", difficulty: 3,
+    vignette: "Criança de 6 anos com faringite (provável estreptococo, cocos gram-positivos) e história de reação alérgica grave à amoxicilina aos 3 anos. O médico prefere via oral.",
+    question: "Qual classe é a mais apropriada em eficácia e segurança?",
+    options: [
+      "Cefalosporina (cefaclor)",
+      "Macrolídeo (azitromicina)",
+      "Tetraciclina (doxiciclina)",
+      "Glicopeptídeo (vancomicina)",
+      "Penicilina G benzatina intramuscular"
+    ],
+    answer: 1,
+    explanation: "Faringite estreptocócica normalmente se trata com penicilina/amoxicilina, MAS há história de reação ALÉRGICA GRAVE a betalactâmico → evitá-los (há risco de reação cruzada com cefalosporinas, sobretudo de 1ª geração). O MACROLÍDEO (azitromicina) é a alternativa oral apropriada. Tetraciclina é contraindicada em crianças (dentes/ossos); vancomicina é EV e reservada.",
+    tags: ["faringite", "alergia à penicilina", "macrolídeo"]
+  },
+  {
+    id: "terp04", discipline: "terap", phase: "N2", topic: "Antimicrobianos — escolha", difficulty: 2,
+    vignette: "Gestante no 7º mês, internada com pneumonia por Streptococcus pneumoniae (gram-positivo, não produtor de betalactamase).",
+    question: "Qual a classe mais indicada e segura?",
+    options: [
+      "Tetraciclinas",
+      "Penicilina (ex.: penicilina G / amoxicilina)",
+      "Sulfonamidas",
+      "Fluoroquinolonas",
+      "Aminoglicosídeos"
+    ],
+    answer: 1,
+    explanation: "Pneumococo não produtor de betalactamase é sensível à PENICILINA, que é o antibiótico de escolha e SEGURO na gestação (categoria favorável). Tetraciclinas e fluoroquinolonas são evitadas na gravidez (dentes/cartilagem); sulfonamidas têm restrições (kernicterus perto do termo). Escolha guiada por espectro + segurança.",
+    tags: ["pneumonia", "penicilina", "gestação"]
+  },
+  {
+    id: "terp05", discipline: "terap", phase: "N2", topic: "Farmacologia autonômica", difficulty: 3,
+    vignette: "Comparação dos efeitos de noradrenalina e adrenalina sobre os vasos da musculatura esquelética.",
+    question: "Assinale a afirmativa correta:",
+    options: [
+      "Apenas a noradrenalina dilata os vasos da musculatura esquelética, por agir em beta-2",
+      "Apenas a adrenalina causa vasodilatação na musculatura esquelética, pois age em receptores beta-2 adrenérgicos",
+      "Ambas causam vasoconstrição idêntica em todos os leitos",
+      "A adrenalina só age em receptores alfa",
+      "A noradrenalina é o único vasodilatador esplâncnico"
+    ],
+    answer: 1,
+    explanation: "A ADRENALINA ativa receptores beta-2 (além de alfa e beta-1); nos vasos da musculatura esquelética, o efeito beta-2 predomina em doses fisiológicas → VASODILATAÇÃO. A NORADRENALINA tem afinidade beta-2 baixa, predominando o efeito alfa (vasoconstrição). Por isso a adrenalina pode reduzir a resistência periférica em baixas doses, e a noradrenalina eleva.",
+    tags: ["adrenalina", "beta-2", "catecolaminas"]
+  },
+
+  /* ---- Introdução à Prática Cirúrgica (prova/simulado N1) ---- */
+  {
+    id: "cirp01", discipline: "cirurgia", phase: "N1", topic: "Antissepsia e assepsia", difficulty: 2,
+    vignette: "No preparo pré-operatório, realiza-se antissepsia da pele do paciente para reduzir o risco de infecção do sítio cirúrgico.",
+    question: "Sobre a antissepsia da pele, assinale a correta:",
+    options: [
+      "Elimina de forma total e definitiva toda a microbiota da pele",
+      "Elimina a microbiota transitória, reduz a permanente e proporciona efeito residual antimicrobiano",
+      "Remove apenas a microbiota permanente",
+      "Só é indicada em cirurgias contaminadas",
+      "Não tem efeito residual"
+    ],
+    answer: 1,
+    explanation: "A antissepsia (ex.: clorexidina, PVPI) visa ELIMINAR a microbiota TRANSITÓRIA, REDUZIR a PERMANENTE (residente) e deixar EFEITO RESIDUAL (a clorexidina tem boa ação residual). Não há eliminação total/definitiva (a microbiota residente é difícil de erradicar). Aplica-se a todo procedimento, não só aos contaminados.",
+    tags: ["antissepsia", "microbiota", "efeito residual"]
+  },
+  {
+    id: "cirp02", discipline: "cirurgia", phase: "N1", topic: "Tempos cirúrgicos", difficulty: 1,
+    vignette: "Os procedimentos são divididos em tempos operatórios.",
+    question: "A etapa de separação/divisão dos tecidos para acessar a estrutura a ser tratada é a:",
+    options: ["Hemostasia", "Diérese", "Síntese", "Exérese", "Antissepsia"],
+    answer: 1,
+    explanation: "DIÉRESE = divisão/separação dos tecidos (incisão) para acesso. Sequência: diérese → hemostasia → exérese (cirurgia propriamente dita) → síntese (reconstrução). Hemostasia controla sangramento; síntese aproxima/reconstrói.",
+    tags: ["diérese", "tempos cirúrgicos"]
+  },
+  {
+    id: "cirp03", discipline: "cirurgia", phase: "N1", topic: "Cicatrização", difficulty: 2,
+    vignette: "Ferida cirúrgica com bordas bem aproximadas, mínima perda tecidual e sem infecção, cicatrizando rapidamente.",
+    question: "Esse tipo de cicatrização é denominado:",
+    options: [
+      "Segunda intenção",
+      "Primeira intenção",
+      "Terceira intenção",
+      "Cicatrização tardia por granulação",
+      "Regeneração completa"
+    ],
+    answer: 1,
+    explanation: "Bordas aproximadas + mínima perda + sem infecção = cicatrização por PRIMEIRA INTENÇÃO (rápida, pouca cicatriz). SEGUNDA intenção: ferida aberta que cicatriza por granulação (perda tecidual/contaminação). TERCEIRA intenção (primeira intenção tardia): ferida deixada aberta e suturada depois, quando o risco infeccioso reduz.",
+    tags: ["primeira intenção", "cicatrização"]
+  },
+  {
+    id: "cirp04", discipline: "cirurgia", phase: "N1", topic: "Cicatrização", difficulty: 3,
+    vignette: "Paciente submetido a cirurgia abdominal; a ferida NÃO foi suturada inicialmente por contaminação local. Dias depois, reduzido o risco infeccioso, optou-se pelo fechamento cirúrgico das bordas.",
+    question: "Esse tipo de cicatrização é:",
+    options: [
+      "Primeira intenção",
+      "Primeira intenção tardia (terceira intenção)",
+      "Segunda intenção",
+      "Regeneração completa",
+      "Cicatrização hipertrófica"
+    ],
+    answer: 1,
+    explanation: "Ferida deixada ABERTA por contaminação e depois FECHADA (quando o leito melhora) = PRIMEIRA INTENÇÃO TARDIA, também chamada TERCEIRA intenção. Combina um período de granulação/controle da contaminação com o fechamento posterior das bordas.",
+    tags: ["terceira intenção", "primeira intenção tardia"]
+  },
+  {
+    id: "cirp05", discipline: "cirurgia", phase: "N1", topic: "Antissepsia e assepsia", difficulty: 2,
+    vignette: "História da cirurgia e prevenção de infecções.",
+    question: "Qual associação pioneiro × contribuição está CORRETA?",
+    options: [
+      "Louis Pasteur — criou as luvas cirúrgicas",
+      "Joseph Lister — introduziu antissépticos no ambiente cirúrgico (ácido carbólico/fenol) para reduzir infecções",
+      "Ignaz Semmelweis — desenvolveu a teoria da fermentação",
+      "William Halsted — descobriu os antibióticos",
+      "Robert Koch — criou a anestesia geral"
+    ],
+    answer: 1,
+    explanation: "Joseph LISTER é o pai da antissepsia cirúrgica, ao usar ÁCIDO CARBÓLICO (fenol) para reduzir infecções. Semmelweis defendeu a lavagem das mãos (febre puerperal); Halsted introduziu as luvas cirúrgicas; Pasteur estabeleceu a teoria dos germes/fermentação. Associações históricas caem em prova.",
+    tags: ["Lister", "história", "antissepsia"]
+  },
+  {
+    id: "cirp06", discipline: "cirurgia", phase: "N1", topic: "Instrumental cirúrgico", difficulty: 2,
+    vignette: "O instrumental cirúrgico é organizado por função (diérese, preensão, hemostasia, síntese, especiais).",
+    question: "A pinça Allis é usada tipicamente para:",
+    options: [
+      "Hemostasia de vasos",
+      "Preensão e tração de tecidos (preensão firme)",
+      "Aproximação das bordas na sutura",
+      "Corte de tecidos",
+      "Fixação de campos estéreis à pele"
+    ],
+    answer: 1,
+    explanation: "A pinça ALLIS é de PREENSÃO/tração de tecidos, segurando-os com firmeza (pode ser traumática). Hemostasia → pinças hemostáticas (Kelly, Halsted/mosquito). Síntese/sutura → porta-agulhas e pinça anatômica/dente de rato. Fixação de campos → pinça de campo (Backhaus). Conhecer os quadrantes do instrumental é cobrado.",
+    tags: ["Allis", "preensão", "instrumental"]
+  },
+  {
+    id: "cirp07", discipline: "cirurgia", phase: "N1", topic: "Áreas do centro cirúrgico", difficulty: 2,
+    vignette: "Estudante entra no centro cirúrgico com pijama privativo, mas sem touca e máscara, alegando que são opcionais fora do campo.",
+    question: "Sobre as áreas do CC e a paramentação, assinale a correta:",
+    options: [
+      "Na área irrestrita é obrigatório touca e máscara para todos",
+      "Na área restrita (onde ocorre a cirurgia) são obrigatórios pijama privativo, touca e máscara",
+      "Touca e máscara são opcionais em qualquer área",
+      "A área semirrestrita não exige nenhuma paramentação",
+      "O uso de máscara só é necessário para o cirurgião"
+    ],
+    answer: 1,
+    explanation: "O CC divide-se em áreas IRRESTRITA (livre, roupa comum), SEMIRRESTRITA (circulação interna, exige pijama privativo e touca) e RESTRITA (salas cirúrgicas, exige pijama privativo, TOUCA e MÁSCARA). Portanto, na área restrita, touca e máscara NÃO são opcionais — reduzem a contaminação do ambiente/campo.",
+    tags: ["centro cirúrgico", "áreas", "paramentação"]
+  },
+
+  /* ---- PIG V (prova) ---- */
+  {
+    id: "pigp01", discipline: "pig", phase: "N1", topic: "Financiamento em saúde", difficulty: 2,
+    vignette: "Nos sistemas de saúde há três fontes de financiamento: governo, empresas e famílias. Parte do cuidado recai sobre o pagamento direto (do próprio bolso) das famílias.",
+    question: "Em qual segmento a maior parte dos gastos vem do pagamento direto (out of pocket)?",
+    options: [
+      "Exames de imagem",
+      "Medicamentos e artigos médicos",
+      "Home care",
+      "Próteses e órteses",
+      "Internações hospitalares"
+    ],
+    answer: 1,
+    explanation: "O segmento de MEDICAMENTOS e artigos médicos concentra a maior parte do gasto DIRETO das famílias (out of pocket), pois muitos itens não são cobertos pelo SUS nem pelos planos. Reconhecer as fontes de financiamento e onde recai o desembolso direto é conteúdo central de gestão.",
+    tags: ["out of pocket", "medicamentos", "financiamento"]
+  },
+  {
+    id: "pigp02", discipline: "pig", phase: "N1", topic: "SUS e regulação", difficulty: 1,
+    vignette: "Sobre o objetivo comum da organização dos sistemas de saúde.",
+    question: "Qual é esse objetivo, conforme a literatura de gestão?",
+    options: [
+      "Maximizar a eficiência das instituições",
+      "Assegurar que as pessoas vivam mais e melhor, com o menor custo possível",
+      "Aumentar a complexidade tecnológica dos serviços",
+      "Garantir acesso apenas a determinados grupos sociais",
+      "Ampliar o número de hospitais"
+    ],
+    answer: 1,
+    explanation: "O objetivo dos sistemas de saúde é assegurar que as pessoas VIVAM MAIS E MELHOR com o MENOR CUSTO possível — equilibrando acesso, qualidade e sustentabilidade. Eficiência e tecnologia são meios, não o fim.",
+    tags: ["sistemas de saúde", "objetivo"]
+  },
+  {
+    id: "pigp03", discipline: "pig", phase: "N1", topic: "Linha de cuidado", difficulty: 2,
+    vignette: "Na implantação de linhas de cuidado (ex.: depressão), a Portaria MS nº 4.279/2010 e os autores definem um aspecto crucial.",
+    question: "Qual elemento é central para a implementação da Linha de Cuidado?",
+    options: [
+      "A atenção hospitalar como porta de entrada",
+      "A Atenção Primária à Saúde (APS) como coordenadora do cuidado e ordenadora da rede",
+      "Ofertas ambulatoriais amplas substituindo a APS",
+      "A alta densidade tecnológica como eixo principal",
+      "O pagamento direto pelas famílias"
+    ],
+    answer: 1,
+    explanation: "A LINHA DE CUIDADO se organiza tendo a APS como COORDENADORA do cuidado e ORDENADORA da rede — garantindo continuidade, integralidade e o itinerário adequado do paciente entre os níveis de atenção. A APS é a base das Redes de Atenção à Saúde (Portaria 4.279/2010).",
+    tags: ["linha de cuidado", "APS", "RAS"]
+  },
+  {
+    id: "pigp04", discipline: "pig", phase: "N1", topic: "Financiamento em saúde", difficulty: 3,
+    vignette: "Em 2015, o número de beneficiários de planos de saúde caiu de forma acentuada e não se recuperou.",
+    question: "Qual a hipótese mais aceita para essa redução?",
+    options: [
+      "Ampliação do out of pocket por aumento da renda familiar",
+      "Impacto duradouro da crise econômica sobre o emprego (planos empresariais) e a renda das famílias (planos individuais)",
+      "Crescimento dos cartões populares de saúde substituindo os planos",
+      "Migração para o SUS por melhora da rede pública",
+      "Redução do número de operadoras por falência"
+    ],
+    answer: 1,
+    explanation: "A queda de beneficiários a partir de 2015 é atribuída principalmente à CRISE ECONÔMICA: o desemprego reduziu os planos EMPRESARIAIS (a maior parte da carteira é coletiva/empresarial) e a queda de renda reduziu os planos INDIVIDUAIS. O vínculo emprego-plano explica a sensibilidade do setor ao mercado de trabalho.",
+    tags: ["beneficiários", "crise", "planos"]
+  },
+
+  /* ---- Medicina Legal (processual/ética) ---- */
+  {
+    id: "legp01", discipline: "legal", phase: "N2", topic: "Ética / documentos", difficulty: 2,
+    vignette: "Discussão sobre documentos médicos e responsabilidade profissional.",
+    question: "Assinale a afirmativa CORRETA sobre atestados e ética médica:",
+    options: [
+      "É ético o médico fornecer atestado de complacência (sem exame/veracidade) a pedido do paciente",
+      "O atestado médico é ato médico que deve ser verdadeiro; atestado falso configura infração ética e crime",
+      "O médico pode atestar óbito de paciente que nunca examinou, livremente",
+      "O sigilo médico impede sempre a emissão de qualquer atestado",
+      "O prontuário pertence exclusivamente ao médico e pode ser destruído após a alta"
+    ],
+    answer: 1,
+    explanation: "O atestado é ATO MÉDICO e deve ser VERDADEIRO. Atestado FALSO ou de COMPLACÊNCIA (sem correspondência com a realidade) é infração ética (Código de Ética Médica) e pode configurar CRIME (falsidade). O prontuário pertence ao paciente e deve ser guardado pelo prazo legal, não destruído.",
+    tags: ["atestado", "ética", "falsidade"]
+  },
+
+  /* ---- RCI V (casos) ---- */
+  {
+    id: "rcip01", discipline: "rci", phase: "N2", topic: "Hepatite medicamentosa", difficulty: 3,
+    vignette: "Paciente inicia novo fármaco e, semanas depois, apresenta icterícia, ALT/AST muito elevadas e INR alargado, sem obstrução biliar à imagem. Suspeita-se de lesão hepática induzida por droga (DILI).",
+    question: "Qual a primeira conduta e o parâmetro de gravidade?",
+    options: [
+      "Manter o fármaco e observar; a fosfatase alcalina indica gravidade",
+      "Suspender imediatamente o fármaco suspeito; o INR/tempo de protrombina (função de síntese) indica gravidade",
+      "Aumentar a dose do fármaco para induzir tolerância",
+      "Iniciar antibiótico de amplo espectro",
+      "Solicitar apenas sorologias e liberar o paciente"
+    ],
+    answer: 1,
+    explanation: "Na hepatite medicamentosa (DILI), a conduta inicial é SUSPENDER o agente suspeito. O padrão é HEPATOCELULAR (ALT/AST↑↑) e a GRAVIDADE se mede pela função de SÍNTESE — INR/TP alargado e bilirrubina (Lei de Hy: hepatocelular + icterícia = pior prognóstico). A FA marca colestase, não a gravidade hepatocelular.",
+    tags: ["DILI", "suspender fármaco", "INR"]
+  },
 ];
 
 /* ============================ FLASHCARDS ============================ */
@@ -1691,6 +2148,26 @@ const FLASHCARDS = [
   { id: "f-aps01", discipline: "aps", phase: "N2", front: "CAT — quando emitir", back: "Até o 1º dia útil após o acidente (imediatamente se óbito). Deve ser emitida MESMO sem afastamento. Garante direitos previdenciários." },
   { id: "f-aps02", discipline: "aps", phase: "N2", front: "SINAN e CEREST", back: "SINAN: sistema de notificação de agravos (vigilância). CEREST: Centro de Referência em Saúde do Trabalhador (rede pública de apoio)." },
   { id: "f-aps03", discipline: "aps", phase: "N2", front: "Conduta da APS em Saúde do Trabalhador", back: "Acolhimento → anamnese ocupacional → nexo causal → registro → avaliar capacidade laboral → relatório → CAT/SINAN → encaminhar (CEREST) → prevenção." },
+
+  /* ---- Flashcards dos materiais/provas (Mandic) ---- */
+  { id: "f-madp1", discipline: "mad", phase: "N1", front: "Disfunção endotelial na sepse", back: "Endotélio ativado/lesado → expressa fator tecidual (pró-coagulante) + ↑permeabilidade → CID (microtrombos) e choque distributivo." },
+  { id: "f-madp2", discipline: "mad", phase: "N1", front: "Imunoedição (3 E's)", back: "Eliminação → Equilíbrio → Escape. Tumor evade por perda de MHC-I, PD-L1, Treg. Base da imunoterapia." },
+  { id: "f-madp3", discipline: "mad", phase: "N2", front: "Autoinflamatória vs autoimune", back: "Autoinflamatória: imunidade INATA (inflamassoma, IL-1), SEM autoanticorpos. Autoimune: linfócitos T/B autorreativos + autoanticorpos." },
+  { id: "f-madp4", discipline: "mad", phase: "N2", front: "Espondilite anquilosante", back: "HLA-B27, entesite, sacroileíte, anquilose da coluna ('bambu'). Soronegativa (FAN/FR negativos). Dor lombar inflamatória (melhora com exercício)." },
+  { id: "f-madp5", discipline: "mad", phase: "N2", front: "Artrite reumatoide — marcadores", back: "Anti-CCP = mais ESPECÍFICO. FR = sensível, inespecífico. Citocinas: TNF-α, IL-1, IL-6. Poliartrite simétrica de pequenas articulações." },
+  { id: "f-madp6", discipline: "mad", phase: "N2", front: "Febre reumática — mecanismo", back: "Mimetismo molecular pós-Streptococcus pyogenes: valvulite (mitral), poliartrite migratória, coreia. Prevenir tratando a faringite." },
+  { id: "f-terp1", discipline: "terap", phase: "N2", front: "Receptores adrenérgicos — efeitos", back: "α1: vasoconstrição. β1: coração (↑FC/força). β2: broncodilatação + vasodilatação musc. esquelética. Adrenalina age em β2; noradrenalina, não." },
+  { id: "f-terp2", discipline: "terap", phase: "N2", front: "Feocromocitoma — ordem do bloqueio", back: "Bloquear ALFA (fenoxibenzamina) ANTES do beta — evita crise hipertensiva por estímulo alfa sem oposição. Antagonista α1 dilata arteríolas e veias." },
+  { id: "f-terp3", discipline: "terap", phase: "N2", front: "Anticolinesterásico na miastenia", back: "Piridostigmina inibe a acetilcolinesterase → ↑ACh na fenda → mais estímulo dos receptores remanescentes → melhora a força." },
+  { id: "f-terp4", discipline: "terap", phase: "N2", front: "Antibiótico: alergia à penicilina", back: "Alergia GRAVE a betalactâmico → macrolídeo (azitromicina). Evitar cefalosporina (reação cruzada). Gestante/criança: evitar tetraciclina e fluoroquinolona." },
+  { id: "f-cirp1", discipline: "cirurgia", phase: "N1", front: "Objetivo da antissepsia da pele", back: "Eliminar microbiota TRANSITÓRIA, reduzir a PERMANENTE e deixar EFEITO RESIDUAL (ex.: clorexidina). Não elimina tudo." },
+  { id: "f-cirp2", discipline: "cirurgia", phase: "N1", front: "Tipos de cicatrização (intenção)", back: "1ª: bordas aproximadas, limpa. 2ª: aberta, granulação (perda/contaminação). 3ª (1ª tardia): aberta e suturada depois." },
+  { id: "f-cirp3", discipline: "cirurgia", phase: "N1", front: "Áreas do centro cirúrgico", back: "Irrestrita (livre) · Semirrestrita (pijama+touca) · Restrita (pijama+touca+MÁSCARA = salas cirúrgicas)." },
+  { id: "f-cirp4", discipline: "cirurgia", phase: "N1", front: "Instrumental por função", back: "Diérese (bisturi/tesoura); preensão (Allis, dente de rato); hemostasia (Kelly/mosquito); síntese (porta-agulhas); campos (Backhaus)." },
+  { id: "f-cirp5", discipline: "cirurgia", phase: "N1", front: "Pioneiros da cirurgia", back: "Lister: antissepsia (ácido carbólico). Semmelweis: lavagem das mãos. Halsted: luvas cirúrgicas. Pasteur: teoria dos germes." },
+  { id: "f-pigp1", discipline: "pig", phase: "N1", front: "Out of pocket — onde recai", back: "Maior parte do pagamento direto das famílias está em MEDICAMENTOS e artigos médicos (não cobertos por SUS/plano)." },
+  { id: "f-pigp2", discipline: "pig", phase: "N1", front: "Queda de beneficiários pós-2015", back: "Crise econômica: desemprego reduz planos EMPRESARIAIS (coletivos) e queda de renda reduz os INDIVIDUAIS." },
+  { id: "f-legp1", discipline: "legal", phase: "N2", front: "Atestado de complacência", back: "Atestado falso/sem exame = infração ética (CEM) e pode ser crime (falsidade). Atestado é ato médico e deve ser verdadeiro." },
 ];
 
 /* ============================ CRONOGRAMA (liberação por semana) ============================
