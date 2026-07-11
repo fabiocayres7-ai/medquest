@@ -91,7 +91,8 @@ function freshState(){
     history:{},                   // {"AAAA-MM-DD": {xp,answered,correct}} — evolução diária
     notes:{},                     // {"disc::topic": "anotação pessoal"}
     duels:[],                     // histórico de duelos [{opp,my,their,res,date}]
-    settings:{pomoFocus:25, pomoBreak:5}, // Pomodoro configurável
+    settings:{pomoFocus:25, pomoBreak:5, pomoGoal:4, theme:"dark"}, // config
+    dailyQ:{date:"", done:false, correct:false}, // questão do dia
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
@@ -159,7 +160,7 @@ function recordAnswer(q, correct){
   S.byTopic[tk].answered++;
   // registro por questão + controle de erros
   if(!S.seenQ[q.id]) S.seenQ[q.id]={correct:false,count:0};
-  S.seenQ[q.id].count++;
+  S.seenQ[q.id].count++; S.seenQ[q.id].last=todayStr();
   if(correct){
     S.stats.correct++; S.byDisc[disc].correct++; S.byTopic[tk].correct++;
     S.seenQ[q.id].correct=true; delete S.errors[q.id];
@@ -479,12 +480,27 @@ function viewHome(m){
     <div class="muted small mt">${wk>=WGOAL?"Meta batida! 🎉 Continue somando para o ranking da semana.":"XP desta semana conta no ranking semanal da turma."}</div>`;
   m.appendChild(wcard);
 
+  // Questão do dia
+  const dqc=el("div","card mt"); dqc.style.borderColor= dailyDone()?"var(--good)":"var(--gold)";
+  if(dailyDone()){
+    dqc.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:26px">✅</div>
+      <div class="small"><b>Questão do dia</b> concluída — ${S.dailyQ.correct?"você acertou! 🎉":"volte amanhã para a próxima."}</div></div>`;
+  } else {
+    dqc.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:26px">🎯</div>
+      <div class="small" style="flex:1"><b>Questão do dia</b> — a mesma para toda a turma. Acerte e ganhe bônus!</div></div>`;
+    const db=el("button","btn block mt","🎯 Responder (+50 XP se acertar)"); db.onclick=startDaily; dqc.appendChild(db);
+  }
+  m.appendChild(dqc);
+
   // Praticar
   m.appendChild(el("div","sectitle","Praticar"));
   const acts=el("div","btnrow");
   const b1=el("button","btn","🎲 Desafio rápido"); b1.onclick=()=>startSession({source:"studied",n:10}); acts.appendChild(b1);
   const b2=el("button","btn","⏱️ Modo Prova"); b2.onclick=()=>startSession({source:"studied",n:15,exam:true,minutes:20}); acts.appendChild(b2);
   m.appendChild(acts);
+  const actsR=el("div","btnrow mt");
+  const br=el("button","btn ghost","🧠 Revisão inteligente"); br.onclick=()=>startSmartReview(15); actsR.appendChild(br);
+  m.appendChild(actsR);
   const acts2=el("div","btnrow mt");
   const ec=errorsCount(), bc=bookmarksCount();
   const b3=el("button","btn ghost",`🔁 Refazer erros${ec?` (${ec})`:""}`); b3.onclick=()=>startSession({source:"errors",n:20}); if(!ec)b3.style.opacity=".6"; acts2.appendChild(b3);
@@ -747,6 +763,32 @@ function startDuelAccept(code){
   startFromQuestions(qs, {role:"accept", by:data.by||"Colega", oppC:data.c||0, oppN:data.n||qs.length});
 }
 
+// ---- Revisão inteligente (curva do esquecimento) ----
+function reviewScore(q){
+  if(S.errors[q.id]) return 1000;                     // erro pendente = prioridade máxima
+  const s=S.seenQ[q.id];
+  if(!s || !s.correct) return 500;                    // nunca dominada
+  const days = s.last ? daysBetween(s.last, todayStr()) : 30;
+  return Math.min(400, days*10);                      // dominada há mais tempo = revisar
+}
+function startSmartReview(n){
+  const pool=buildPool("studied","all");
+  if(!pool.length){ toast("Libere temas no Plano para revisar 📋"); go("plan"); return; }
+  const ranked=pool.slice().sort((a,b)=>reviewScore(b)-reviewScore(a)).slice(0, Math.min(n||15, pool.length));
+  quiz={pool:shuffle(ranked), idx:0, correctCount:0, answered:false, mode:"quiz", source:"smart", exam:false,
+    total:ranked.length, answers:new Array(ranked.length).fill(null), scored:false, endAt:null};
+  go("quiz");
+}
+// ---- Questão do dia (igual para todos, por data) ----
+function dailyQuestion(){ return QUESTIONS[Math.abs(hash(todayStr()))%QUESTIONS.length]; }
+function dailyDone(){ return S.dailyQ && S.dailyQ.date===todayStr() && S.dailyQ.done; }
+function startDaily(){
+  const dq=dailyQuestion();
+  quiz={pool:[dq], idx:0, correctCount:0, answered:false, mode:"quiz", source:"daily", exam:false,
+    total:1, answers:[null], scored:false, endAt:null, daily:true};
+  go("quiz");
+}
+
 function viewQuiz(m){
   if(!quiz){ const p=el("div","card center"); p.innerHTML=`<p class="muted">Escolha um modo na tela inicial.</p>`;
     const b=el("button","btn mt","🎲 Desafio rápido");b.onclick=()=>startSession({source:"studied",n:10});p.appendChild(b); m.appendChild(p); return; }
@@ -817,6 +859,8 @@ function answer(i,body,opts,q){
   const ex=el("div","explain "+(correct?"ok":"no"));
   ex.innerHTML=`<span class="tag">${correct?`✔ Correto! +${gain} XP`:"✗ Incorreto"}</span>${esc(q.explanation)}`;
   body.appendChild(ex);
+  if(quiz.daily && !dailyDone()){ const bonus=correct?50:15; addXP(bonus); S.dailyQ={date:todayStr(),done:true,correct};
+    ex.innerHTML+=`<div class="mt" style="color:var(--gold);font-weight:700">🎯 Questão do dia! +${bonus} XP</div>`; }
   const nav=el("div","btnrow mt");
   const nb=el("button","btn",quiz.idx+1>=quiz.pool.length?"Ver resultado →":"Próxima →");
   nb.onclick=()=>{ quiz.idx++; quiz.answered=false; render(); window.scrollTo(0,0); };
@@ -1130,6 +1174,7 @@ function viewBadges(m){
   head.innerHTML=`<h3>🎖️ Conquistas</h3>
     <p class="muted small">Cada conquista tem 5 patamares: 🥉 Bronze · 🥈 Prata · 🥇 Ouro · 🏆 Platina · 💠 Diamante. Quanto maior, mais XP.</p>
     <div class="muted small mt">${achievementsUnlocked()}/${achievementsMax()} patamares conquistados</div>`;
+  const shb=el("button","btn sm mt","📣 Compartilhar meu progresso"); shb.onclick=shareCard; head.appendChild(shb);
   m.appendChild(head);
 
   // Evolução (últimos 14 dias)
@@ -1267,7 +1312,8 @@ function pomoEnsureLoop(){
     pomo.left--;
     if(pomo.left<=0){
       if(pomo.phase==="focus"){ S.stats.pomodoros=(S.stats.pomodoros||0)+1; const h=histToday(); h.pomodoros=(h.pomodoros||0)+1; touchStreak(); addXP(15); save(); renderTopbar(); checkBadges();
-        pomoNotify("Foco concluído! +15 XP 🍅 Hora de descansar ☕"); pomoBegin("break"); }
+        const goal=(S.settings&&S.settings.pomoGoal)||4;
+        pomoNotify((h.pomodoros>=goal?"Meta de foco do dia batida! 🎉 ":"Foco concluído! +15 XP 🍅 ")+"Hora de descansar ☕"); pomoBegin("break"); }
       else { pomoNotify("Descanso acabou! Bora voltar aos estudos 💪"); pomoBegin("focus"); }
       return;
     }
@@ -1311,9 +1357,28 @@ function pomoRender(){
     (controls?`<div class="pomo-ctrl">${controls}</div>`:"");
   $("#pomo-toggle").onclick=()=>{ pomo.open=!pomo.open; pomoRender(); };
   const bind=(id,fn)=>{ const b=$("#"+id); if(b) b.onclick=fn; };
-  bind("p-start",pomoIniciar); bind("p-cfg",pomoCyclePreset);
+  bind("p-start",pomoIniciar); bind("p-cfg",pomoConfig);
   bind("p-pause",pomoPausar); bind("p-resume",pomoRetomar);
   bind("p-restart",pomoReiniciar); bind("p-stop",pomoParar);
+}
+function pomoConfig(){
+  const bg=el("div","modal-bg"); const mo=el("div","modal"); mo.style.textAlign="left";
+  mo.innerHTML=`<h3 style="text-align:center">🍅 Configurar Pomodoro</h3>`;
+  function numRow(label,val,min,max){ const wrap=el("div","mt"); wrap.innerHTML=`<div class="small muted">${label}</div>`;
+    const inp=el("input","input"); inp.type="number"; inp.min=min; inp.max=max; inp.value=val; wrap.appendChild(inp); mo.appendChild(wrap); return inp; }
+  const fi=numRow("Foco (minutos)",pFocus(),1,180);
+  const bi=numRow("Descanso (minutos)",pBreak(),1,60);
+  const gi=numRow("Meta de pomodoros por dia",(S.settings.pomoGoal||4),1,20);
+  const pr=el("div","chiprow mt"); POMO_PRESETS.forEach(p=>{ const c=el("button","chip",p[0]+"/"+p[1]); c.onclick=()=>{ fi.value=p[0]; bi.value=p[1]; }; pr.appendChild(c); });
+  mo.appendChild(el("div","small muted mt","Presets rápidos:")); mo.appendChild(pr);
+  const sv=el("button","btn block mt","Salvar"); sv.onclick=()=>{
+    S.settings.pomoFocus=Math.max(1,Math.min(180,parseInt(fi.value)||25));
+    S.settings.pomoBreak=Math.max(1,Math.min(60,parseInt(bi.value)||5));
+    S.settings.pomoGoal=Math.max(1,Math.min(20,parseInt(gi.value)||4));
+    save(); pomoRender(); toast("Configuração salva 🍅"); bg.remove();
+  };
+  const cl=el("button","btn ghost block mt","Fechar"); cl.onclick=()=>bg.remove();
+  mo.append(sv,cl); bg.appendChild(mo); bg.onclick=e=>{ if(e.target===bg) bg.remove(); }; document.body.appendChild(bg);
 }
 
 /* ---------- Busca global ---------- */
@@ -1352,9 +1417,53 @@ function openSearch(){
   inp.oninput=run;
 }
 
+/* ---------- Compartilhar progresso (imagem) ---------- */
+function shareCard(){
+  const li=levelInfo(S.xp);
+  const acc=S.stats.answered?Math.round(S.stats.correct/S.stats.answered*100):0;
+  const W=1080,H=1080; const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+  const ctx=cv.getContext&&cv.getContext("2d");
+  if(!ctx){ toast("Seu navegador não permite gerar a imagem aqui."); return; }
+  const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,"#0b1020"); g.addColorStop(1,"#211447"); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const g2=ctx.createRadialGradient(W*0.82,H*0.12,0,W*0.82,H*0.12,640); g2.addColorStop(0,"rgba(124,140,255,.35)"); g2.addColorStop(1,"rgba(124,140,255,0)"); ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
+  ctx.textAlign="center";
+  ctx.fillStyle="#e8edf7"; ctx.font="bold 52px Segoe UI, Arial, sans-serif"; ctx.fillText("MedQuest 5", W/2, 150);
+  ctx.font="bold 92px Segoe UI, Arial, sans-serif"; ctx.fillText(S.profile.name||"Jogador", W/2, 330);
+  ctx.fillStyle="#b06cff"; ctx.font="bold 50px Segoe UI, Arial, sans-serif"; ctx.fillText("Nível "+li.level+" · "+li.title, W/2, 410);
+  function stat(x,big,lbl,color){ ctx.fillStyle=color; ctx.font="bold 100px Segoe UI, Arial, sans-serif"; ctx.fillText(String(big), x, 640); ctx.fillStyle="#9aa7c7"; ctx.font="36px Segoe UI, Arial, sans-serif"; ctx.fillText(lbl, x, 705); }
+  stat(W*0.25, S.xp, "XP", "#f4c145");
+  stat(W*0.5, S.streak.count, "dias 🔥", "#fb7185");
+  stat(W*0.75, acc+"%", "acerto", "#34d399");
+  ctx.fillStyle="#e8edf7"; ctx.font="44px Segoe UI, Arial, sans-serif"; ctx.fillText(S.stats.answered+" questões · "+achievementsUnlocked()+"/"+achievementsMax()+" conquistas", W/2, 830);
+  ctx.fillStyle="#8ea0c4"; ctx.font="38px Segoe UI, Arial, sans-serif"; ctx.fillText("Bora estudar comigo!", W/2, 930);
+  ctx.fillStyle="#5f6d92"; ctx.font="32px Segoe UI, Arial, sans-serif"; ctx.fillText("fabiocayres7-ai.github.io/medquest", W/2, 1015);
+  cv.toBlob(async (blob)=>{
+    if(!blob){ toast("Não consegui gerar a imagem."); return; }
+    const file=new File([blob],"medquest.png",{type:"image/png"});
+    try{ if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:"MedQuest 5", text:"Meu progresso no MedQuest!"}); return; } }catch(e){}
+    const url=URL.createObjectURL(blob);
+    const bg=el("div","modal-bg"); const mo=el("div","modal");
+    mo.innerHTML=`<h3>📣 Compartilhar progresso</h3><img src="${url}" alt="progresso" style="width:100%;border-radius:14px;margin:10px 0">`;
+    const a=el("a","btn block"); a.href=url; a.download="medquest.png"; a.textContent="⬇️ Baixar imagem"; mo.appendChild(a);
+    const cl=el("button","btn ghost block mt","Fechar"); cl.onclick=()=>{bg.remove();URL.revokeObjectURL(url);}; mo.appendChild(cl);
+    bg.appendChild(mo); bg.onclick=e=>{ if(e.target===bg){bg.remove();URL.revokeObjectURL(url);} }; document.body.appendChild(bg);
+  },"image/png");
+}
+
+/* ---------- Tema claro/escuro ---------- */
+function applyTheme(){
+  const light=(S.settings&&S.settings.theme)==="light";
+  document.body.classList.toggle("light", light);
+  const tb=$("#themebtn"); if(tb) tb.textContent= light?"☀️":"🌙";
+  const tc=document.querySelector('meta[name="theme-color"]'); if(tc) tc.setAttribute("content", light?"#f4f6fb":"#080b16");
+}
+function toggleTheme(){ if(!S.settings) S.settings={}; S.settings.theme=(S.settings.theme==="light")?"dark":"light"; save(); applyTheme(); }
+
 /* ---------- Boot ---------- */
 pomoRender();
+applyTheme();
 const _sb=$("#searchbtn"); if(_sb) _sb.onclick=openSearch;
+const _tb=$("#themebtn"); if(_tb) _tb.onclick=toggleTheme;
 ensureMissions();
 // sincroniza conquistas com o progresso atual (sem duplicar patamares já registrados)
 for(const a of ACHIEVEMENTS){ const t=achTier(a); if((S.ach[a.id]||0)<t) S.ach[a.id]=t; }

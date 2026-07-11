@@ -27,6 +27,19 @@
   --r:18px; --r-sm:12px; --r-lg:26px;
   --nav-w:92px;
 }
+body.light{
+  --bg:#eef1f8;
+  --surface-1:#ffffff;
+  --surface-2:#f4f6fc;
+  --surface-3:#e8edf7;
+  --stroke:rgba(20,26,43,.10);
+  --stroke-2:rgba(20,26,43,.18);
+  --txt:#151b2c;
+  --muted:#586182;
+  --muted2:#8b96b3;
+  --shadow:0 16px 40px -14px rgba(60,70,120,.28);
+  --shadow-sm:0 6px 18px -10px rgba(60,70,120,.30);
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
@@ -345,6 +358,18 @@ textarea.input{resize:vertical;min-height:80px;font-size:12px;line-height:1.5}
 .pmb.stop:hover{color:var(--bad);border-color:var(--bad)}
 .pmb.cfg{color:var(--muted)}
 @media (min-width:960px){ .pomo{bottom:24px} }
+
+/* Ajustes do tema claro */
+body.light .bar,
+body.light .prog,
+body.light .disc .prog,
+body.light .mission .mprog,
+body.light .mission .mprog{background:rgba(20,26,43,.09)}
+body.light .bar{background:rgba(20,26,43,.08)}
+body.light .nav{background:rgba(255,255,255,.88);border-top-color:var(--stroke)}
+body.light .opt .k{background:var(--surface-3)}
+body.light::before{opacity:.45}
+body.light .flash-back{background:linear-gradient(160deg,#eef2fb,#ffffff)}
 
 .center{text-align:center}
 .muted{color:var(--muted)} .small{font-size:12px}
