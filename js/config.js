@@ -17,12 +17,12 @@ window.MEDQUEST_CONFIG = {
   // Provedor do ranking: "github" | "supabase" | "local"
   RANKING_PROVIDER: "github",
 
-  // --- Modo GitHub (padrão) ---
-  // Dono e nome do repositório onde o app está publicado.
+  // --- Modo GitHub (padrão do ranking) ---
   GH_OWNER: "fabiocayres7-ai",
   GH_REPO:  "medquest",
 
-  // --- Modo Supabase (alternativa; deixe vazio se usar o GitHub) ---
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  // --- Supabase (usado pela Nuvem: sincronização de progresso + Mural da turma) ---
+  // A "publishable key" é pública por design (pode ficar aqui).
+  SUPABASE_URL: "https://lotcwyrktmfsbuvngyom.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_zz7hmJXoonFqYaiacIuLUQ_SeRwuqcb",
 };

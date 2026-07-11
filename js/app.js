@@ -1188,6 +1188,23 @@ function viewRank(m){
   }
   m.appendChild(duel);
 
+  // ---- Mural da turma (Supabase) ----
+  if(supaOn()){
+    const mur=el("div","card mt");
+    mur.innerHTML=`<h3>💬 Mural da turma</h3><p class="muted small mb">Deixe dúvidas, dicas e recados para a turma.</p>`;
+    const ta=el("textarea","input"); ta.placeholder="Escreva algo para a turma...";
+    mur.appendChild(ta);
+    const listc=el("div","mt"); listc.innerHTML=`<div class="muted small">Carregando mural...</div>`;
+    const loadMural=async()=>{ const posts=await muralFetch(); listc.innerHTML="";
+      if(!posts){ listc.innerHTML=`<div class="muted small">Não consegui carregar o mural (o SQL já foi rodado no Supabase?).</div>`; return; }
+      if(!posts.length){ listc.innerHTML=`<div class="muted small">Sem posts ainda. Seja o primeiro! 👋</div>`; return; }
+      posts.forEach(p=>{ const it=el("div","card mt"); it.style.padding="12px"; const when=(p.created_at||"").slice(0,10);
+        it.innerHTML=`<div style="font-weight:700">${esc(p.name||"Anônimo")} <span class="muted small">· ${esc(when)}${p.topic?" · "+esc(p.topic):""}</span></div><div class="small mt">${esc(p.text||"")}</div>`;
+        listc.appendChild(it); }); };
+    const pb=el("button","btn sm mt","📨 Postar"); pb.onclick=async()=>{ if(!ta.value.trim())return; pb.disabled=true; const ok=await muralPost(ta.value); pb.disabled=false; if(ok){ ta.value=""; toast("Postado! 💬"); loadMural(); } else toast("Falha ao postar (o SQL já foi rodado?)."); };
+    mur.append(pb, listc); m.appendChild(mur); loadMural();
+  }
+
   if(online()){
     fetchOnline().then(rows=>{ if(rows&&rows.length){
       if(!rows.find(r=>r.id===S.profile.id)) rows.push(myRow());
@@ -1476,6 +1493,24 @@ function viewBadges(m){
   bk.appendChild(bib);
   m.appendChild(bk);
 
+  // Sincronização em nuvem (Supabase)
+  if(supaOn()){
+    const cl=el("div","card mt");
+    cl.innerHTML=`<b>☁️ Sincronização em nuvem</b><p class="muted small mt mb">Salve seu progresso na nuvem e recupere em qualquer aparelho usando o seu <b>ID de sincronização</b>.</p>`;
+    const row=el("div","btnrow");
+    const sv=el("button","btn sm","☁️ Salvar na nuvem"); sv.onclick=cloudSave;
+    const ld=el("button","btn ghost sm","⬇️ Baixar (este ID)"); ld.onclick=()=>cloudLoad();
+    row.append(sv,ld); cl.appendChild(row);
+    cl.appendChild(el("div","small muted mt","Seu ID de sincronização (copie para usar em outro aparelho):"));
+    const idta=el("textarea","input"); idta.readOnly=true; idta.value=S.profile.id; idta.style.fontSize="11px"; idta.onclick=()=>{idta.select();document.execCommand&&document.execCommand("copy");toast("ID copiado!");};
+    cl.appendChild(idta);
+    const oid=el("input","input"); oid.placeholder="Baixar de outro ID (cole aqui)...";
+    cl.appendChild(oid);
+    const ob=el("button","btn ghost sm mt","⬇️ Baixar desse ID"); ob.onclick=()=>{ if(oid.value.trim()) cloudLoad(oid.value); };
+    cl.appendChild(ob);
+    m.appendChild(cl);
+  }
+
   // Reset
   const rc=el("div","center mt");
   const rb=el("button","btn ghost sm","⟲ Reiniciar progresso"); rb.onclick=()=>{ if(confirm("Apagar TODO o seu progresso? Não dá para desfazer.")){ localStorage.removeItem(LS_KEY); S=freshState(); onboard(); } };
@@ -1623,6 +1658,48 @@ function openSearch(){
       im.forEach(x=>{ const it=el("div","card mt"); it.innerHTML=`<div class="muted small">${esc(x.area)}</div><div class="small"><b>Achados:</b> ${esc(x.findings)}</div><div class="small" style="color:var(--good)"><b>Dx:</b> ${esc(x.answer)}</div>`; res.appendChild(it); }); }
   }
   inp.oninput=run;
+}
+
+/* ---------- Nuvem (Supabase): sincronização + mural ---------- */
+function supaOn(){ return !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY); }
+function supaHeaders(extra){ return Object.assign({ apikey:CFG.SUPABASE_ANON_KEY, Authorization:"Bearer "+CFG.SUPABASE_ANON_KEY, "Content-Type":"application/json" }, extra||{}); }
+async function cloudSave(){
+  if(!supaOn()){ toast("Nuvem não configurada."); return; }
+  try{
+    const body=[{ player_id:S.profile.id, name:S.profile.name||"", turma:S.profile.turma||"",
+      data:btoa(unescape(encodeURIComponent(JSON.stringify(S)))) }];
+    const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/saves", {method:"POST", headers:supaHeaders({Prefer:"resolution=merge-duplicates"}), body:JSON.stringify(body)});
+    toast(res.ok?"Progresso salvo na nuvem ☁️✅":("Falha ao salvar ("+res.status+"). O SQL já foi rodado?"));
+  }catch(e){ toast("Sem conexão com a nuvem."); }
+}
+async function cloudLoad(id){
+  if(!supaOn()){ toast("Nuvem não configurada."); return; }
+  const pid=(id||S.profile.id).trim();
+  if(!confirm("Baixar da nuvem vai SUBSTITUIR seu progresso atual. Continuar?")) return;
+  try{
+    const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/saves?player_id=eq."+encodeURIComponent(pid)+"&select=data", {headers:supaHeaders()});
+    if(!res.ok){ toast("Falha ao acessar a nuvem ("+res.status+")."); return; }
+    const rows=await res.json();
+    if(!rows||!rows.length){ toast("Nenhum backup na nuvem para esse ID."); return; }
+    const st=JSON.parse(decodeURIComponent(escape(atob(rows[0].data))));
+    if(!st||!st.profile) throw 0;
+    S=migrate(st); save(); applyTheme(); applyFontScale(); toast("Progresso baixado da nuvem ✅"); go("home");
+  }catch(e){ toast("Backup da nuvem inválido."); }
+}
+async function muralFetch(){
+  if(!supaOn()) return null;
+  try{
+    const url=CFG.SUPABASE_URL+"/rest/v1/mural?turma=eq."+encodeURIComponent(S.profile.turma)+"&select=*&order=id.desc&limit=60";
+    const res=await fetch(url,{headers:supaHeaders()}); return res.ok? await res.json() : null;
+  }catch(e){ return null; }
+}
+async function muralPost(text, topic){
+  if(!supaOn()) return false;
+  try{
+    const body=[{ turma:S.profile.turma, name:S.profile.name||"Anônimo", text:String(text).slice(0,600), topic:topic||null }];
+    const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/mural",{method:"POST", headers:supaHeaders(), body:JSON.stringify(body)});
+    return res.ok;
+  }catch(e){ return false; }
 }
 
 /* ---------- Compartilhar progresso (imagem) ---------- */
