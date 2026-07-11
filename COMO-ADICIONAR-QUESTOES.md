@@ -105,6 +105,38 @@ const SUMMARIES = {
 
 Use `\n` para quebrar linha e `+` para juntar linhas (como no exemplo). O resumo aparece na aba **📖 Resumos**, dentro da disciplina, e um marcador 📖 surge no Plano.
 
+## 4.1) Liberar conteúdo por SEMANA (cronograma + estudo pré-aula)
+
+Quando o cronograma oficial das aulas sair, preencha o bloco **CRONOGRAMA** (topo do `content.js`).
+Com ele ligado, o Plano passa a mostrar o conteúdo **semana a semana**, cada aula ganha um **estudo pré-aula**,
+e os temas só podem ser marcados/estudados a partir da data em que a semana libera.
+
+```js
+const CRONOGRAMA = {
+  active: true,                 // <- ligue mudando para true
+  startDate: "2026-08-04",      // 1ª segunda-feira de aula
+  weeks: [
+    { n:1, inicio:"2026-08-04", rotulo:"Semana 1 (04–08/ago)", aulas:[
+      { disc:"mad",   topic:"Imunidade inata vs adaptativa",
+        preAula:"Ler o resumo e listar 3 diferenças antes da aula." },
+      { disc:"terap", topic:"Farmacocinética — meia-vida",
+        preAula:"Revisar meia-vida e steady state." },
+    ]},
+    { n:2, inicio:"2026-08-11", rotulo:"Semana 2 (11–15/ago)", aulas:[
+      { disc:"pratica", topic:"Patologia do esôfago", preAula:"Fatores de risco escamoso x adeno." },
+    ]},
+  ],
+};
+```
+
+Regras:
+- `topic` deve ser **igual** ao do plano/questões (para casar as questões e o resumo).
+- `inicio` é a data (AAAA-MM-DD) em que a semana **libera** — antes disso os temas ficam 🔒.
+- `preAula` é o que estudar **antes** daquela aula (aparece em destaque).
+- Enquanto `active` for `false` ou `weeks` vazio, o Plano funciona por disciplina (modo atual).
+
+> **Reset no início das aulas:** para zerar o progresso de teste, abra a aba **Conquistas → Reiniciar progresso** (cada colega faz no seu aparelho), ou apague os dados do site no navegador.
+
 ## 5) Testar se não quebrou
 
 Se o app abrir em branco depois de editar, provavelmente faltou uma vírgula ou aspas.

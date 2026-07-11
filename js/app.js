@@ -5,22 +5,24 @@
    ============================================================ */
 (function(){
 "use strict";
-const { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES } = window.MEDQUEST_DATA;
+const { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA } = window.MEDQUEST_DATA;
 const CFG = window.MEDQUEST_CONFIG;
 const LS_KEY = "medquest5_state_v1";
 
-/* ---------- Níveis ---------- */
+/* ---------- Níveis (curva exigente) ---------- */
 const LEVELS = [
-  {min:0,    t:"Calouro"},
-  {min:120,  t:"Interno"},
-  {min:320,  t:"Plantonista"},
-  {min:640,  t:"Residente"},
-  {min:1100, t:"Preceptor"},
-  {min:1750, t:"Especialista"},
-  {min:2600, t:"Chefe de Equipe"},
-  {min:3700, t:"Professor"},
-  {min:5100, t:"Livre-Docente"},
-  {min:7000, t:"Lenda da Mandic"},
+  {min:0,     t:"Calouro"},
+  {min:300,   t:"Interno"},
+  {min:800,   t:"Plantonista"},
+  {min:1600,  t:"Residente R1"},
+  {min:2800,  t:"Residente R2"},
+  {min:4500,  t:"Preceptor"},
+  {min:6800,  t:"Especialista"},
+  {min:9800,  t:"Chefe de Equipe"},
+  {min:13800, t:"Professor"},
+  {min:19000, t:"Livre-Docente"},
+  {min:26000, t:"Notório Saber"},
+  {min:35000, t:"Lenda da Mandic"},
 ];
 function levelInfo(xp){
   let idx=0;
@@ -31,34 +33,59 @@ function levelInfo(xp){
   return {level:idx+1, title:cur.t, pct, toNext: next? ceil-xp : 0, next};
 }
 
-/* ---------- Conquistas ---------- */
-const BADGES = [
-  {id:"first",   em:"🎯", nm:"Primeiro Diagnóstico", ds:"Acerte 1 questão",           test:s=>s.stats.correct>=1},
-  {id:"q50",     em:"📚", nm:"Estudante Dedicado",    ds:"Responda 50 questões",       test:s=>s.stats.answered>=50},
-  {id:"q150",    em:"🏅", nm:"Centurião Clínico",     ds:"Responda 150 questões",      test:s=>s.stats.answered>=150},
-  {id:"acc80",   em:"🎓", nm:"Olho Clínico",          ds:"80%+ de acerto (min 30 q)",  test:s=>s.stats.answered>=30 && s.stats.correct/s.stats.answered>=.8},
-  {id:"streak7", em:"🔥", nm:"Rotina de Plantão",     ds:"7 dias seguidos estudando",  test:s=>s.streak.best>=7},
-  {id:"streak30",em:"⚡", nm:"Maratonista",           ds:"30 dias seguidos",           test:s=>s.streak.best>=30},
-  {id:"flash100",em:"🧠", nm:"Memória de Elefante",   ds:"Revise 100 flashcards",      test:s=>s.stats.reviews>=100},
-  {id:"perfect", em:"💎", nm:"Alta sem Intercorrências", ds:"Simulado 100% (min 8 q)", test:s=>s.flags.perfectQuiz},
-  {id:"immuno",  em:"🧬", nm:"Imunologista",          ds:"30 acertos em MAD II",       test:s=>(s.byDisc.mad?.correct||0)>=30},
-  {id:"pharma",  em:"💊", nm:"Farmacologista",        ds:"20 acertos em Terapêutica",  test:s=>(s.byDisc.terap?.correct||0)>=20},
-  {id:"generalist",em:"🩺",nm:"Clínico Geral",        ds:"1 acerto em cada disciplina",test:s=>Object.keys(DISCIPLINES).every(d=>(s.byDisc[d]?.correct||0)>=1)},
-  {id:"lvl5",    em:"👑", nm:"Preceptor",             ds:"Alcance o nível 5",          test:s=>levelInfo(s.xp).level>=5},
+/* ---------- Conquistas com NÍVEIS (Bronze → Diamante) ----------
+   Cada conquista tem uma métrica e 5 patamares crescentes e difíceis.
+   XP de recompensa cresce por patamar. */
+const TIER_NAMES = ["Bronze","Prata","Ouro","Platina","Diamante"];
+const TIER_EM    = ["🥉","🥈","🥇","🏆","💠"];
+const TIER_XP    = [30, 75, 150, 300, 600];   // recompensa por patamar alcançado
+function discCorrect(s,d){ return (s.byDisc[d]?.correct)||0; }
+function disciplinesWith(s,n){ return Object.keys(DISCIPLINES).filter(d=>discCorrect(s,d)>=n).length; }
+
+const ACHIEVEMENTS = [
+  { id:"resp",  em:"📚", nm:"Maratonista de Questões", unit:"questões",
+    metric:s=>s.stats.answered, tiers:[50,150,350,700,1200] },
+  { id:"acert", em:"🎯", nm:"Diagnóstico Certeiro", unit:"acertos",
+    metric:s=>s.stats.correct, tiers:[30,100,250,500,900] },
+  { id:"prec",  em:"🎓", nm:"Olho Clínico", unit:"% (mín. 50 q)", isPct:true,
+    metric:s=>s.stats.answered>=50? Math.round(s.stats.correct/s.stats.answered*100):0, tiers:[70,78,84,90,95] },
+  { id:"streak",em:"🔥", nm:"Rotina de Plantão", unit:"dias seguidos",
+    metric:s=>s.streak.best, tiers:[5,10,20,40,75] },
+  { id:"dias",  em:"📅", nm:"Presença Constante", unit:"dias de estudo",
+    metric:s=>s.stats.activeDays||0, tiers:[7,20,45,80,130] },
+  { id:"flash", em:"🧠", nm:"Memória de Elefante", unit:"revisões",
+    metric:s=>s.stats.reviews, tiers:[80,250,600,1200,2500] },
+  { id:"sim",   em:"💎", nm:"Alta sem Intercorrências", unit:"simulados 100%",
+    metric:s=>s.stats.perfectQuizzes||0, tiers:[1,3,7,15,30] },
+  { id:"plano", em:"🗺️", nm:"Mestre do Plano", unit:"temas estudados",
+    metric:s=>Object.keys(s.studied||{}).length, tiers:[10,25,45,65,82] },
+  { id:"nivel", em:"👑", nm:"Ascensão", unit:"nível",
+    metric:s=>levelInfo(s.xp).level, tiers:[4,6,8,10,12] },
+  { id:"imuno", em:"🧬", nm:"Imunologista", unit:"acertos em MAD II",
+    metric:s=>discCorrect(s,"mad"), tiers:[15,40,75,120,180] },
+  { id:"pato",  em:"🔬", nm:"Patologista", unit:"acertos em Prática Clínica",
+    metric:s=>discCorrect(s,"pratica"), tiers:[15,40,75,120,180] },
+  { id:"pharma",em:"💊", nm:"Farmacologista", unit:"acertos em Terapêutica",
+    metric:s=>discCorrect(s,"terap"), tiers:[8,20,40,70,110] },
+  { id:"geral", em:"🩺", nm:"Clínico Geral", unit:"disciplinas dominadas",
+    metric:s=>disciplinesWith(s,10), tiers:[2,4,6,7,8] },
 ];
+// patamar atual alcançado (0 = nenhum, 5 = Diamante) para uma conquista
+function achTier(a){ const v=a.metric(S); let t=0; for(let i=0;i<a.tiers.length;i++){ if(v>=a.tiers[i]) t=i+1; } return t; }
 
 /* ---------- Estado ---------- */
 function freshState(){
   return {
     profile:{ id:"p_"+Math.abs(hash(String(navigator.userAgent+performance.now()+"x"))).toString(36), name:"", turma:CFG.TURMA },
     xp:0,
-    stats:{answered:0, correct:0, reviews:0},
+    stats:{answered:0, correct:0, reviews:0, activeDays:0, perfectQuizzes:0},
     studied:{},                   // {"disc::topic": true} — temas marcados como estudados
     byDisc:{},                    // {disc:{answered,correct}}
     seenQ:{},                     // {qid: {correct:bool, count}}
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
+    ach:{},                       // {achId: patamarAlcancado} — conquistas com níveis
     badges:[],
     flags:{perfectQuiz:false},
     friends:[],                   // ranking local: [{id,name,xp,level,streak}]
@@ -89,6 +116,7 @@ function addXP(n){ S.xp+=n; }
 function touchStreak(){
   const t=todayStr();
   if(S.streak.last===t) return;
+  S.stats.activeDays=(S.stats.activeDays||0)+1;   // novo dia com atividade
   if(S.streak.last && daysBetween(S.streak.last,t)===1) S.streak.count++;
   else S.streak.count=1;
   S.streak.last=t;
@@ -131,7 +159,26 @@ function studiedCount(){
   for(const d in DISCIPLINES){ planTopics(d).forEach(x=>{ t++; if(x.studied) s++; }); }
   return {studied:s, total:t};
 }
-function setStudied(disc,topic,val){ const k=tkey(disc,topic); if(val) S.studied[k]=true; else delete S.studied[k]; save(); }
+function setStudied(disc,topic,val){
+  if(val && !topicReleased(disc,topic)) return false;   // conteúdo ainda não liberado
+  const k=tkey(disc,topic); if(val) S.studied[k]=true; else delete S.studied[k]; save(); return true;
+}
+
+/* ---------- Cronograma (liberação por semana) ---------- */
+function cronogramaActive(){ return CRONOGRAMA && CRONOGRAMA.active && Array.isArray(CRONOGRAMA.weeks) && CRONOGRAMA.weeks.length>0; }
+function weekReleased(inicio){ return !inicio ? true : todayStr()>=inicio; }
+function topicWeekMap(){
+  const map={};
+  if(!cronogramaActive()) return map;
+  CRONOGRAMA.weeks.forEach(w=>{ (w.aulas||[]).forEach(a=>{ map[tkey(a.disc,a.topic)]={n:w.n, inicio:w.inicio, rotulo:w.rotulo, preAula:a.preAula}; }); });
+  return map;
+}
+function topicReleased(disc,topic){
+  if(!cronogramaActive()) return true;
+  const w=topicWeekMap()[tkey(disc,topic)];
+  if(!w) return true;               // tema fora do cronograma fica sempre disponível
+  return weekReleased(w.inicio);
+}
 
 /* ---------- Missões diárias ---------- */
 function ensureMissions(){
@@ -152,11 +199,21 @@ function bumpMission(id,by=1){
 }
 
 /* ---------- Conquistas ---------- */
-function checkBadges(){
-  const newly=[];
-  for(const b of BADGES){ if(!S.badges.includes(b.id) && b.test(S)){ S.badges.push(b.id); newly.push(b);} }
-  if(newly.length){ save(); showBadgeModal(newly[0]); }
+function checkBadges(){ // mantém o nome para não quebrar chamadas; avalia conquistas em níveis
+  let up=null;
+  for(const a of ACHIEVEMENTS){
+    const prev=S.ach[a.id]||0, now=achTier(a);
+    if(now>prev){
+      // premia cada patamar novo alcançado de uma vez
+      for(let i=prev;i<now;i++) addXP(TIER_XP[i]);
+      S.ach[a.id]=now;
+      if(!up) up={a, tier:now};
+    }
+  }
+  if(up){ save(); showBadgeModal(up.a, up.tier); }
 }
+function achievementsUnlocked(){ let n=0; for(const a of ACHIEVEMENTS) n+=(S.ach[a.id]||0); return n; }
+function achievementsMax(){ return ACHIEVEMENTS.length*5; }
 
 /* ---------- SM-2 (flashcards) ---------- */
 function dueCards(){
@@ -326,7 +383,7 @@ function viewHome(m){
     tile("❓",S.stats.answered,"questões"),
     tile("🎯",acc+"%","de acerto"),
     tile("🃏",S.stats.reviews,"revisões"),
-    tile("🎖️",S.badges.length+"/"+BADGES.length,"conquistas"),
+    tile("🎖️",achievementsUnlocked()+"/"+achievementsMax(),"patamares"),
   );
   m.appendChild(tiles);
 
@@ -380,6 +437,38 @@ function viewHome(m){
 }
 function tile(em,big,lbl){ const t=el("div","tile"); t.innerHTML=`<div class="em">${em}</div><div class="big">${big}</div><div class="lbl">${lbl}</div>`; return t;}
 
+/* ---------- Modo semanal (cronograma) ---------- */
+function renderCronograma(m){
+  const info=el("div","card mt");
+  info.innerHTML=`<b>📅 Cronograma das aulas</b><p class="muted small mt">O conteúdo libera a cada semana. Faça o <b>estudo pré-aula</b> antes de cada aula e marque o tema como estudado para liberar as questões.</p>`;
+  m.appendChild(info);
+
+  CRONOGRAMA.weeks.forEach(w=>{
+    const released=weekReleased(w.inicio);
+    const card=el("div","card mt");
+    if(!released) card.style.opacity=".7";
+    const dt = w.inicio ? new Date(w.inicio+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) : "";
+    card.appendChild(el("div","",`<b>${released?"📖":"🔒"} ${esc(w.rotulo||("Semana "+w.n))}</b> <span class="muted small">${released?"liberada":"libera em "+dt}</span>`));
+    (w.aulas||[]).forEach(a=>{
+      const d=DISCIPLINES[a.disc]; if(!d) return;
+      const studied=isStudied(a.disc,a.topic);
+      const qn=QUESTIONS.filter(q=>q.discipline===a.disc&&q.topic===a.topic).length;
+      const row=el("div"); row.style.cssText="border-top:1px solid var(--stroke);margin-top:10px;padding-top:10px";
+      row.innerHTML=`<div style="display:flex;align-items:center;gap:10px">
+          <input type="checkbox" ${studied?"checked":""} ${released?"":"disabled"} style="width:20px;height:20px;accent-color:${d.color}">
+          <div style="flex:1"><div style="font-weight:600">${d.icon} ${esc(a.topic)}</div>
+            <div class="muted small">${esc(d.name)} · ${qn} questõe${qn!==1?"s":""}${hasSummary(a.disc,a.topic)?" · 📖 resumo":""}</div></div>
+          <span class="rw" style="color:${studied?'var(--good)':'var(--muted2)'}">${studied?"estudado":""}</span></div>
+        ${a.preAula?`<div class="explain" style="margin-top:8px"><span class="tag" style="color:var(--accent)">📌 Estudo pré-aula</span>${esc(a.preAula)}</div>`:""}`;
+      const cb=row.querySelector("input");
+      if(released) cb.onchange=()=>{ setStudied(a.disc,a.topic,cb.checked); render(); };
+      card.appendChild(row);
+    });
+    m.appendChild(card);
+  });
+  m.appendChild(el("div","center muted small mt","Semanas futuras liberam automaticamente na data. 💪"));
+}
+
 /* ---------- PLANO DE ESTUDOS ---------- */
 function viewPlan(m){
   const sc=studiedCount();
@@ -389,6 +478,15 @@ function viewPlan(m){
     <div class="prog" style="margin-top:10px"><span style="width:${sc.total?Math.round(sc.studied/sc.total*100):0}%;background:var(--accent)"></span></div>
     <div class="muted small mt">${sc.studied}/${sc.total} temas marcados como estudados</div>`;
   m.appendChild(head);
+
+  // Modo semanal (quando o cronograma oficial estiver preenchido)
+  if(cronogramaActive()){ renderCronograma(m); return; }
+  else {
+    const note=el("div","card mt"); note.style.borderStyle="dashed";
+    note.innerHTML=`<b>📅 Liberação por semana</b>
+      <p class="muted small mt">Quando os cronogramas das aulas saírem (início de agosto), o conteúdo passa a ser liberado <b>semana a semana</b>, com um <b>estudo pré-aula</b> para cada aula. Até lá, marque livremente abaixo (modo de teste).</p>`;
+    m.appendChild(note);
+  }
 
   for(const disc in DISCIPLINES){
     const d=DISCIPLINES[disc];
@@ -527,7 +625,7 @@ function answer(i,body,opts,q){
 }
 function quizResult(m){
   const pct=Math.round(quiz.correctCount/quiz.total*100);
-  if(quiz.mode==="sim" && quiz.total>=8 && pct===100){ S.flags.perfectQuiz=true; save(); checkBadges(); }
+  if(quiz.mode==="sim" && quiz.total>=8 && pct===100){ S.flags.perfectQuiz=true; S.stats.perfectQuizzes=(S.stats.perfectQuizzes||0)+1; save(); checkBadges(); }
   const c=el("div","card center");
   const em = pct>=80?"🏆":pct>=60?"👏":"📖";
   c.innerHTML=`<div style="font-size:52px">${em}</div>
@@ -649,12 +747,33 @@ function renderRankList(container, rows){
 
 /* ---------- BADGES ---------- */
 function viewBadges(m){
-  m.appendChild(el("div","sectitle",`Conquistas (${S.badges.length}/${BADGES.length})`));
-  const grid=el("div","grid cols3");
-  BADGES.forEach(b=>{
-    const has=S.badges.includes(b.id);
-    const c=el("div","badge"+(has?"":" locked"));
-    c.innerHTML=`<div class="em">${b.em}</div><div class="nm">${esc(b.nm)}</div><div class="ds">${esc(b.ds)}</div>`;
+  const head=el("div","card");
+  head.innerHTML=`<h3>🎖️ Conquistas</h3>
+    <p class="muted small">Cada conquista tem 5 patamares: 🥉 Bronze · 🥈 Prata · 🥇 Ouro · 🏆 Platina · 💠 Diamante. Quanto maior, mais XP.</p>
+    <div class="muted small mt">${achievementsUnlocked()}/${achievementsMax()} patamares conquistados</div>`;
+  m.appendChild(head);
+
+  const grid=el("div","grid cols2 mt");
+  ACHIEVEMENTS.forEach(a=>{
+    const cur=S.ach[a.id]||0, val=a.metric(S);
+    const nextReq = cur<5 ? a.tiers[cur] : null;
+    const emShown = cur>0 ? TIER_EM[cur-1] : "🔒";
+    const tierName = cur>0 ? TIER_NAMES[cur-1] : "Bloqueada";
+    // barra de progresso rumo ao próximo patamar
+    const prevReq = cur>0 ? a.tiers[cur-1] : 0;
+    const pct = nextReq!=null ? Math.min(100, Math.round(((val-prevReq)/(nextReq-prevReq))*100)) : 100;
+    const c=el("div","card"+(cur===0?" locked":""));
+    c.style.padding="14px";
+    // pips dos 5 níveis
+    let pips=""; for(let i=0;i<5;i++){ pips+=`<span style="opacity:${i<cur?1:.25};font-size:15px">${TIER_EM[i]}</span>`; }
+    c.innerHTML=`<div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:30px">${a.em}</div>
+        <div style="flex:1"><div style="font-weight:700">${esc(a.nm)}</div>
+          <div class="muted small">${cur>0?tierName:"—"} · ${val}${a.isPct?"%":""} ${esc(a.unit).replace(/%.*/,"")}</div></div>
+        <div style="font-size:20px">${emShown}</div></div>
+      <div style="display:flex;gap:4px;margin-top:8px">${pips}</div>
+      <div class="prog" style="margin-top:8px"><span style="width:${pct}%;background:${cur>=5?'var(--gold)':'var(--accent)'}"></span></div>
+      <div class="muted small mt">${nextReq!=null?`Próximo (${TIER_NAMES[cur]}): ${nextReq} ${esc(a.unit)}`:"✅ Diamante — máximo!"}</div>`;
     grid.appendChild(c);
   });
   m.appendChild(grid);
@@ -681,9 +800,11 @@ function viewBadges(m){
 
 /* ---------- Modais / toast ---------- */
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200); }
-function showBadgeModal(b){
+function showBadgeModal(a, tier){
   const bg=el("div","modal-bg"); const mo=el("div","modal");
-  mo.innerHTML=`<div class="em">${b.em}</div><h2>Conquista desbloqueada!</h2><p><b>${esc(b.nm)}</b><br>${esc(b.ds)}</p>`;
+  const tname=TIER_NAMES[tier-1], tem=TIER_EM[tier-1], req=a.tiers[tier-1];
+  mo.innerHTML=`<div class="em">${a.em} ${tem}</div><h2>${tname} desbloqueado!</h2>
+    <p><b>${esc(a.nm)} — ${tname}</b><br>${req} ${esc(a.unit)}<br><span style="color:var(--gold)">+${TIER_XP[tier-1]} XP</span></p>`;
   const btn=el("button","btn block","Continuar 🎉"); btn.onclick=()=>bg.remove(); mo.appendChild(btn);
   bg.appendChild(mo); bg.onclick=e=>{if(e.target===bg)bg.remove();}; document.body.appendChild(bg);
 }
@@ -700,6 +821,9 @@ function onboard(){
 
 /* ---------- Boot ---------- */
 ensureMissions();
+// sincroniza conquistas com o progresso atual (sem duplicar patamares já registrados)
+for(const a of ACHIEVEMENTS){ const t=achTier(a); if((S.ach[a.id]||0)<t) S.ach[a.id]=t; }
+save();
 render();
 if(!S.profile.name) onboard();
 window.MEDQUEST_IMPORT = importCode; // util para debug/console

@@ -149,6 +149,63 @@ const SUMMARIES = {
     "• Steady state e eliminação quase completa: ~4–5 meias-vidas (independe da dose).\n"+
     "• Dose de ataque = Vd × Css (preenche o volume). Manutenção = Clearance × Css.\n"+
     "• 1ª ordem: elimina fração constante, t½ estável. Ordem zero: quantidade fixa/tempo (etanol, fenitoína, AAS).",
+
+  "mad::Imunidade inata vs adaptativa":
+    "INATA: imediata, inespecífica, SEM memória. Barreiras, fagócitos (neutrófilo, macrófago), NK, complemento, PRR/PAMP.\n"+
+    "ADAPTATIVA: específica, mais lenta na 1ª vez, COM memória. Humoral (linfócito B → anticorpo) e celular (T CD4 helper, T CD8 citotóxico).\n"+
+    "• Ponte entre as duas: células apresentadoras (dendrítica) via MHC.",
+  "mad::Sistema complemento":
+    "3 vias (clássica: Ac; alternativa: superfície microbiana; lectinas: MBL) → convergem em C3.\n"+
+    "Funções: C3b = OPSONIZAÇÃO; C3a/C5a = anafilotoxinas (C5a quimiotaxia); C5b-9 = MAC (lise).\n"+
+    "• Deficiência de C5-C9 → infecções por Neisseria. Deficiência de C1-inibidor → angioedema hereditário.",
+  "mad::Transplantes / HLA":
+    "HLA (MHC) classe I (A,B,C)→CD8; classe II (DR,DQ,DP)→CD4. Quanto mais compatível, menor rejeição.\n"+
+    "Rejeição: HIPERAGUDA (min-h, Ac pré-formados) · AGUDA (dias-sem, celular T ou humoral) · CRÔNICA (meses-anos, fibrose/arteriosclerose).\n"+
+    "• GVHD: linfócitos T do DOADOR atacam o receptor (pele, intestino, fígado).",
+  "mad::Hipersensibilidade":
+    "Gell e Coombs:\n"+
+    "I (imediata): IgE + mastócito → histamina (anafilaxia, alergia).\n"+
+    "II (citotóxica): IgG/IgM contra antígeno de superfície (transfusão, anemia hemolítica; Coombs).\n"+
+    "III (imunocomplexos): deposição + complemento (doença do soro, LES).\n"+
+    "IV (tardia): linfócitos T/macrófagos, 48-72h (PPD, dermatite de contato). Única CELULAR.",
+  "mad::Imunodeficiências":
+    "PRIMÁRIAS: Bruton (BTK, ausência de B, X) · DiGeorge (aplasia tímica, sem T) · SCID (T e B) · DGC (catalase+, granulomas) · def. complemento (Neisseria).\n"+
+    "SECUNDÁRIAS: HIV (↓CD4), desnutrição, corticoide/imunossupressor, quimioterapia. Infecções de repetição são a pista.",
+  "mad::Vasculites":
+    "Grandes vasos: Takayasu, arterite temporal. Médios: PAN (HBV, poupa pulmão), Kawasaki.\n"+
+    "Pequenos ANCA: GPA/Wegener (PR3/ANCA-c, via aérea+rim), poliangiite microscópica e EGPA/Churg-Strauss (MPO/ANCA-p).\n"+
+    "Pequenos por imunocomplexo: Henoch-Schönlein (IgA, criança, púrpura+dor abdominal).",
+  "pratica::Patologia do esôfago":
+    "ESCAMOSO (epidermoide): terço médio/superior, tabaco+álcool.\n"+
+    "ADENOCARCINOMA: terço distal, DRGE → esôfago de Barrett (metaplasia intestinal) → displasia → adenocarcinoma.\n"+
+    "• Disfagia progressiva (sólidos→líquidos) + perda de peso = alarme.",
+  "pratica::Doença inflamatória intestinal":
+    "CROHN: boca→ânus, SALTEADO, TRANSMURAL, granulomas, 'paralelepípedo', fístulas/estenoses.\n"+
+    "RCU: reto→cólon, CONTÍNUO, mucosa/submucosa, criptite, megacólon tóxico, ↑risco de CA colorretal.\n"+
+    "• p-ANCA mais na RCU; ASCA mais no Crohn.",
+  "pratica::Cirrose — complicações":
+    "Hipertensão portal → varizes (hematêmese), ascite, circulação colateral (cabeça de medusa), esplenomegalia.\n"+
+    "Outras: PBE (PMN>250 no líquido), encefalopatia hepática (amônia; trata com lactulose), síndrome hepatorrenal, CHC.\n"+
+    "• Child-Pugh e MELD estimam gravidade/prognóstico.",
+  "pratica::Patologia da tireoide":
+    "Hashimoto: hipotireoidismo, anti-TPO, células de Hürthle. Graves: hipertireoidismo, anti-TRAB, exoftalmia, captação alta.\n"+
+    "De Quervain (subaguda): dolorosa, pós-viral, VHS↑, captação BAIXA. Carcinoma papilífero: mais comum, psammoma, linfático, bom prognóstico.",
+  "terap::Metabolismo — indução/inibição":
+    "Fase I (CYP450: oxidação) → Fase II (conjugação: glicuronidação/sulfatação → hidrossolúvel).\n"+
+    "INDUTORES (rifampicina, carbamazepina, fenitoína, álcool crônico): ↑metabolismo, ↓efeito.\n"+
+    "INIBIDORES (claritromicina, cetoconazol, suco de toranja, ritonavir): ↓metabolismo, ↑efeito/toxicidade.",
+  "cirurgia::Tempos cirúrgicos":
+    "1) DIÉRESE (incisão/divisão dos tecidos) → 2) HEMOSTASIA (controle do sangramento) →\n"+
+    "3) EXÉRESE / cirurgia propriamente dita → 4) SÍNTESE (reconstrução/sutura).\n"+
+    "• Síntese por 1ª intenção (bordas aproximadas) x 2ª intenção (granulação).",
+  "cirurgia::Fios e suturas":
+    "ABSORVÍVEIS (catgut, Vicryl/poliglactina, PDS): planos profundos, mucosa, aponeurose (PDS).\n"+
+    "INABSORVÍVEIS (nylon, prolene, seda): pele e onde exige força prolongada.\n"+
+    "Mono (nylon/prolene): menos infecção, mais memória. Multi (seda/Vicryl): melhor nó, retém bactéria.",
+  "legal::Traumatologia forense":
+    "Por instrumento: INCISA (gume, bordas nítidas, sem pontes) · CONTUSA (contundente, bordas irregulares, pontes) ·\n"+
+    "PERFUROINCISA (ponta+gume, faca) · PERFUROCONTUSA (PAF) · CORTOCONTUSA (gume+peso, machado).\n"+
+    "PAF entrada: menor, orla de escoriação, tatuagem se curta distância. Saída: maior, evertida, sem orla.",
 };
 
 /* ============================ QUESTÕES ============================ */
@@ -1636,5 +1693,31 @@ const FLASHCARDS = [
   { id: "f-aps03", discipline: "aps", phase: "N2", front: "Conduta da APS em Saúde do Trabalhador", back: "Acolhimento → anamnese ocupacional → nexo causal → registro → avaliar capacidade laboral → relatório → CAT/SINAN → encaminhar (CEREST) → prevenção." },
 ];
 
+/* ============================ CRONOGRAMA (liberação por semana) ============================
+   Preencha quando sair o cronograma oficial das aulas (início de agosto).
+   - active: mude para true para ligar o modo semanal no Plano.
+   - startDate: 1ª segunda-feira de aula (formato "AAAA-MM-DD").
+   - weeks[].inicio: data em que a semana LIBERA (a partir dela dá para marcar/estudar os temas).
+   - cada aula: { disc, topic (igual ao do plano), preAula (o que estudar ANTES da aula), data opcional }.
+   Enquanto weeks estiver vazio, o Plano funciona por disciplina (modo atual).
+   Guia completo em COMO-ADICIONAR-QUESTOES.md.
+   =========================================================================================== */
+const CRONOGRAMA = {
+  active: false,
+  startDate: "",
+  weeks: [
+    /* EXEMPLO — apague e preencha com o cronograma real:
+    { n:1, inicio:"2026-08-04", rotulo:"Semana 1 (04–08/ago)", aulas:[
+      { disc:"mad",   topic:"Imunidade inata vs adaptativa", preAula:"Ler o resumo do tema e listar 3 diferenças inata x adaptativa antes da aula." },
+      { disc:"terap", topic:"Farmacocinética — meia-vida",   preAula:"Revisar o que é meia-vida e steady state; trazer 1 dúvida." },
+      { disc:"pratica", topic:"Patologia do esôfago",        preAula:"Ver os fatores de risco de escamoso x adenocarcinoma." },
+    ]},
+    { n:2, inicio:"2026-08-11", rotulo:"Semana 2 (11–15/ago)", aulas:[
+      { disc:"mad", topic:"Classes de anticorpos", preAula:"Memorizar as 5 classes de Ig e uma função de cada." },
+    ]},
+    */
+  ],
+};
+
 // Exporta para o app
-window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES };
+window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA };
