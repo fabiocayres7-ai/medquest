@@ -71,6 +71,7 @@ const SYLLABUS = {
     { phase:"N1", topic:"Semiologia — síndromes ictéricas" },
     { phase:"N2", topic:"Doença hepática — hepatites virais" },
     { phase:"N2", topic:"Cirrose — complicações" },
+    { phase:"N2", topic:"Vesícula e vias biliares" },
     { phase:"N2", topic:"Câncer de pâncreas" },
     { phase:"N2", topic:"Pâncreas endócrino" },
     { phase:"N2", topic:"Patologia da tireoide" },
@@ -250,6 +251,14 @@ const SUMMARIES = {
   "pig::SUS e regulação":
     "Princípios: universalidade, integralidade, equidade; organização: descentralização, regionalização, hierarquização, participação social.\n"+
     "APS = porta de entrada e ordenadora da rede (linha de cuidado). ANS regula a saúde suplementar; ANVISA, a vigilância sanitária.",
+  "legal::Lesões perfurocontusas":
+    "PAF — orifício de ENTRADA: menor, arredondado, com orla de escoriação, orla de enxugo e aréola equimótica; a curta distância há zona de TATUAGEM (pólvora incrustada, não sai com água) e ESFUMAÇAMENTO (fuligem, sai com água).\n"+
+    "SAÍDA: maior, irregular, bordas evertidas, sem orla. Tiro ENCOSTADO: câmara de mina de Hofmann (gases) e sinal de Puppe-Werkgaetner (impressão da boca do cano).\n"+
+    "Ausência de tatuagem NÃO exclui curta distância (anteparo/roupa retém resíduos).",
+  "pratica::Vesícula e vias biliares":
+    "COLELITÍASE: perfil '4F' (female, forty, fat, fertile), cólica biliar pós-gordura; USG com cálculo (hiperecogênico + sombra acústica).\n"+
+    "Complicações: colecistite aguda (Murphy+), coledocolitíase → icterícia obstrutiva e COLANGITE (tríade de Charcot: dor + febre + icterícia → CPRE de urgência), e PANCREATITE AGUDA biliar (cálculo na ampola de Vater).\n"+
+    "Tratamento definitivo: colecistectomia.",
 };
 
 /* ============================ QUESTÕES ============================ */
@@ -2067,6 +2076,129 @@ const QUESTIONS = [
     explanation: "Na hepatite medicamentosa (DILI), a conduta inicial é SUSPENDER o agente suspeito. O padrão é HEPATOCELULAR (ALT/AST↑↑) e a GRAVIDADE se mede pela função de SÍNTESE — INR/TP alargado e bilirrubina (Lei de Hy: hepatocelular + icterícia = pior prognóstico). A FA marca colestase, não a gravidade hepatocelular.",
     tags: ["DILI", "suspender fármaco", "INR"]
   },
+
+  /* ==================== PROVAS EM IMAGEM (fotos das provas) ==================== */
+
+  /* ---- Medicina Legal (prova impressa) ---- */
+  {
+    id: "legf01", discipline: "legal", phase: "N1", topic: "Traumatologia forense", difficulty: 2,
+    vignette: "Perícia descreve lesão de comprimento maior que a profundidade, com bordas lineares regulares, superfícies internas lisas e hemorragia abundante.",
+    question: "Essa lesão foi produzida, com maior probabilidade, por agente:",
+    options: ["Perfurante", "Cortante (produz ferida incisa)", "Contundente", "Perfuro-contundente", "Corto-contundente"],
+    answer: 1,
+    explanation: "Comprimento > profundidade, bordas lineares/regulares, paredes internas lisas e sangramento abundante = ferida INCISA, produzida por agente CORTANTE (com gume). Perfurante faz orifício (profundidade > extensão); contundente dá bordas irregulares com pontes; corto-contundente (gume+peso) esmaga e corta.",
+    tags: ["ferida incisa", "cortante", "traumatologia"]
+  },
+  {
+    id: "legf02", discipline: "legal", phase: "N1", topic: "Traumatologia forense", difficulty: 3,
+    vignette: "Vítima de acidente com linha de cerol sofre lesão incisa profunda na região ANTERIOR do pescoço.",
+    question: "Segundo a traumatologia forense, essa lesão constitui um(a):",
+    options: ["Degolamento", "Esgorjamento", "Decapitação", "Enforcamento", "Esganadura"],
+    answer: 1,
+    explanation: "ESGORJAMENTO = ferida incisa/cortante na região ANTERIOR do pescoço (corta vasos, laringe/traqueia). DEGOLAMENTO é na região POSTERIOR/lateral (nuca). DECAPITAÇÃO é a separação completa da cabeça. Enforcamento e esganadura são asfixias mecânicas (constrição do pescoço), não feridas incisas.",
+    tags: ["esgorjamento", "pescoço", "traumatologia"]
+  },
+  {
+    id: "legf03", discipline: "legal", phase: "N1", topic: "Traumatologia forense", difficulty: 3,
+    vignette: "Sobre o espectro (evolução das cores) da equimose.",
+    question: "Assinale a alternativa correta:",
+    options: [
+      "Sequência avermelhado → esverdeado → arroxeado → azulado → amarelado; útil para avaliar a profundidade",
+      "Sequência avermelhado → arroxeado → azulado → esverdeado → amarelado; útil para estimar a IDADE (data) da lesão",
+      "Sequência avermelhado → azulado → arroxeado → esverdeado → amarelado; útil para a gravidade",
+      "As cores não têm relação com o tempo",
+      "A equimose é sempre da mesma cor, independentemente do tempo"
+    ],
+    answer: 1,
+    explanation: "O ESPECTRO EQUIMÓTICO (de Legrand du Saulle) evolui: avermelhado → arroxeado → azulado → esverdeado (biliverdina) → amarelado (bilirrubina/hemossiderina). Serve para estimar a IDADE (tempo) da lesão — importante na datação médico-legal. Não indica profundidade nem gravidade.",
+    tags: ["equimose", "espectro", "datação"]
+  },
+  {
+    id: "legf04", discipline: "legal", phase: "N1", topic: "Traumatologia forense", difficulty: 2,
+    vignette: "Escoriação, equimose, edema e hematoma são achados frequentes em ferimentos contusos.",
+    question: "Quais destes NÃO resultam de rotura de vasos e hemorragia?",
+    options: ["Equimose e hematoma", "Edema e escoriação", "Edema e hematoma", "Escoriação e equimose", "Escoriação e hematoma"],
+    answer: 1,
+    explanation: "EQUIMOSE e HEMATOMA são coleções de sangue (rotura vascular + hemorragia). Já o EDEMA é acúmulo de líquido (não sangue) e a ESCORIAÇÃO é arrancamento da epiderme (não depende de hemorragia). Logo, edema e escoriação não decorrem de rotura vascular.",
+    tags: ["contusão", "escoriação", "edema"]
+  },
+  {
+    id: "legf05", discipline: "legal", phase: "N1", topic: "Lesões perfurocontusas", difficulty: 3,
+    vignette: "Ferimento por projétil de arma de fogo (PAF).",
+    question: "Qual dos achados NÃO é produzido pela ação direta do PROJÉTIL?",
+    options: [
+      "Orifício de entrada",
+      "Câmara de mina de Hofmann (produzida pelos gases em tiro encostado)",
+      "Orla de escoriação",
+      "Orla de enxugo",
+      "Aréola equimótica"
+    ],
+    answer: 1,
+    explanation: "A orla de escoriação, a orla de enxugo (limpeza do projétil) e a aréola equimótica são feitas pela passagem do PROJÉTIL no orifício de ENTRADA. A CÂMARA DE MINA DE HOFMANN resulta da ação dos GASES da deflagração em tiros ENCOSTADOS (descolam e explodem os tecidos), não da ação direta do projétil.",
+    tags: ["PAF", "câmara de mina", "orla de enxugo"]
+  },
+  {
+    id: "legf06", discipline: "legal", phase: "N1", topic: "Lesões perfurocontusas", difficulty: 3,
+    vignette: "Discussão pericial sobre distância do disparo em ferimento por arma de fogo.",
+    question: "Assinale a afirmativa CORRETA:",
+    options: [
+      "O orifício de saída é sempre maior que o de entrada",
+      "A ausência de zona de tatuagem NÃO é prova definitiva de que o tiro não foi a curta distância (ex.: anteparo/roupa pode retê-la)",
+      "A zona de tatuagem (grãos de pólvora incrustados) é facilmente removível com água e detergente",
+      "A orla de contusão não se forma em tiros encostados",
+      "A câmara de mina prova que o tiro foi a longa distância"
+    ],
+    answer: 1,
+    explanation: "A ZONA DE TATUAGEM (grãos de pólvora incrustados) indica tiro a curta distância, mas sua AUSÊNCIA não exclui curta distância — roupas/anteparos podem reter os resíduos. A tatuagem verdadeira NÃO sai com água (é incrustada; o que sai é o esfumaçamento/'falsa tatuagem'). O orifício de saída nem sempre é maior. A câmara de mina indica tiro ENCOSTADO (curtíssima distância).",
+    tags: ["tatuagem", "distância", "PAF"]
+  },
+  {
+    id: "legf07", discipline: "legal", phase: "N1", topic: "Traumatologia forense", difficulty: 2,
+    vignette: "No prontuário, descreve-se: lesão avermelhada/equimótica de 5x2 cm no lábio inferior, de bordas regulares e planas, recente, com orla de escoriação.",
+    question: "O tipo de lesão e o agente causador são:",
+    options: [
+      "Ferida incisa; agente cortante",
+      "Lesão contusa (rubefação/equimose); agente contundente",
+      "Ferida perfuroincisa; agente com ponta e gume",
+      "Queimadura; agente térmico",
+      "Ferida perfurocontusa; projétil de arma de fogo"
+    ],
+    answer: 1,
+    explanation: "Rubefação/equimose com orla de escoriação e sem corte limpo caracterizam LESÃO CONTUSA, produzida por agente CONTUNDENTE (superfície romba, sem gume nem ponta), por mecanismo de pressão/deslizamento. Descrever objetivamente (tipo, dimensão, localização, bordas, cor, sinais vitais) é a base do laudo em prontuário.",
+    tags: ["lesão contusa", "contundente", "laudo"]
+  },
+
+  /* ---- APS (prova) e Prática Clínica (caso de imagem) ---- */
+  {
+    id: "apsf01", discipline: "aps", phase: "N2", topic: "Documentos ocupacionais", difficulty: 2,
+    vignette: "Após a avaliação médica ocupacional periódica, é preciso registrar formalmente se o trabalhador está apto ou inapto para a função.",
+    question: "Qual documento registra a aptidão do trabalhador nessa avaliação?",
+    options: [
+      "CAT — Comunicação de Acidente de Trabalho",
+      "ASO — Atestado de Saúde Ocupacional",
+      "SINAN",
+      "Receita médica",
+      "PPRA"
+    ],
+    answer: 1,
+    explanation: "O ASO (Atestado de Saúde Ocupacional) é emitido nos exames ocupacionais (admissional, periódico, demissional, de retorno e de mudança de função) e registra se o trabalhador está APTO ou INAPTO. A CAT formaliza acidente/doença do trabalho; o SINAN é a notificação de agravos. Diferenciar os documentos ocupacionais é cobrado.",
+    tags: ["ASO", "aptidão", "exame ocupacional"]
+  },
+  {
+    id: "praf01", discipline: "pratica", phase: "N2", topic: "Vesícula e vias biliares", difficulty: 3,
+    vignette: "Mulher acima de 40 anos, multípara e obesa, com dor em cólica no hipocôndrio direito após alimentação gordurosa, náuseas e vômitos. Ultrassom mostra imagem hiperecogênica com sombra acústica na vesícula.",
+    question: "O diagnóstico e DUAS complicações possíveis são:",
+    options: [
+      "Hepatite viral; cirrose e varizes",
+      "Colelitíase (cálculo biliar); pode complicar com pancreatite aguda biliar e coledocolitíase/colangite",
+      "Câncer gástrico; metástase e obstrução",
+      "Úlcera duodenal; perfuração e estenose",
+      "Apendicite; abscesso e peritonite"
+    ],
+    answer: 1,
+    explanation: "Perfil '4 F' (female, forty, fat, fertile) + cólica biliar pós-gordura + cálculo com sombra acústica ao USG = COLELITÍASE. Complicações: colecistite aguda, migração do cálculo ao colédoco (COLEDOCOLITÍASE) → obstrução, icterícia, COLANGITE, e PANCREATITE AGUDA BILIAR (cálculo na ampola de Vater). Caso clássico de imagem em prática clínica.",
+    tags: ["colelitíase", "pancreatite biliar", "coledocolitíase"]
+  },
 ];
 
 /* ============================ FLASHCARDS ============================ */
@@ -2168,6 +2300,15 @@ const FLASHCARDS = [
   { id: "f-pigp1", discipline: "pig", phase: "N1", front: "Out of pocket — onde recai", back: "Maior parte do pagamento direto das famílias está em MEDICAMENTOS e artigos médicos (não cobertos por SUS/plano)." },
   { id: "f-pigp2", discipline: "pig", phase: "N1", front: "Queda de beneficiários pós-2015", back: "Crise econômica: desemprego reduz planos EMPRESARIAIS (coletivos) e queda de renda reduz os INDIVIDUAIS." },
   { id: "f-legp1", discipline: "legal", phase: "N2", front: "Atestado de complacência", back: "Atestado falso/sem exame = infração ética (CEM) e pode ser crime (falsidade). Atestado é ato médico e deve ser verdadeiro." },
+
+  /* ---- Flashcards das provas em imagem ---- */
+  { id: "f-legf1", discipline: "legal", phase: "N1", front: "Espectro equimótico (cores × tempo)", back: "Avermelhado → arroxeado → azulado → esverdeado → amarelado. Serve para estimar a IDADE (data) da lesão." },
+  { id: "f-legf2", discipline: "legal", phase: "N1", front: "Sinais contusos: hemorrágicos ou não", back: "Hemorrágicos (rotura de vaso): equimose e hematoma. NÃO hemorrágicos: edema (líquido) e escoriação (arrancamento da epiderme)." },
+  { id: "f-legf3", discipline: "legal", phase: "N1", front: "Esgorjamento × degolamento × decapitação", back: "Esgorjamento: ferida incisa ANTERIOR do pescoço. Degolamento: POSTERIOR/nuca. Decapitação: separação completa da cabeça." },
+  { id: "f-legf4", discipline: "legal", phase: "N1", front: "Câmara de mina de Hofmann", back: "Descolamento explosivo dos tecidos pelos GASES em tiro ENCOSTADO (não pela ação do projétil). Indica curtíssima distância." },
+  { id: "f-legf5", discipline: "legal", phase: "N1", front: "Tatuagem vs esfumaçamento (PAF)", back: "Tatuagem: grãos de pólvora INCRUSTADOS (não sai com água). Esfumaçamento ('falsa tatuagem'): fuligem que SAI com água. Ausência de tatuagem não exclui curta distância." },
+  { id: "f-apsf1", discipline: "aps", phase: "N2", front: "ASO — Atestado de Saúde Ocupacional", back: "Registra APTO/INAPTO nos exames ocupacionais (admissional, periódico, demissional, retorno, mudança de função). Diferente da CAT (acidente) e do SINAN (notificação)." },
+  { id: "f-praf1", discipline: "pratica", phase: "N2", front: "Colelitíase — perfil e complicações", back: "'4 F' (female, forty, fat, fertile), cólica pós-gordura, cálculo com sombra acústica ao USG. Complica: colecistite, coledocolitíase/colangite, pancreatite biliar." },
 ];
 
 /* ============================ CRONOGRAMA (liberação por semana) ============================
