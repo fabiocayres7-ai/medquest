@@ -342,6 +342,7 @@ function render(){
   ensureMissions();
   renderTopbar();
   const main=$("#main"); main.innerHTML="";
+  main.classList.remove("view-enter"); void main.offsetWidth; main.classList.add("view-enter"); // reanima a troca de tela
   if(route==="home") viewHome(main);
   else if(route==="plan") viewPlan(main);
   else if(route==="quiz") viewQuiz(main);
@@ -356,11 +357,15 @@ function go(r){ route=r; if(r==="quiz"&&!quiz) quiz=null; if(r==="flash") flash=
 
 function renderTopbar(){
   const li=levelInfo(S.xp);
+  const initial=(S.profile.name||"J").trim().charAt(0).toUpperCase()||"J";
+  const ring=`conic-gradient(var(--accent) ${li.pct}%, var(--stroke) 0)`;
   $("#playerchip").innerHTML =
-    `<span class="lvl">Nv ${li.level}</span><span class="name">${esc(S.profile.name||"Jogador")}</span>`+
-    `<span class="streak">🔥${S.streak.count}</span>`;
+    `<span class="pc-av" style="background:${ring}"><b>${esc(initial)}</b></span>`+
+    `<span class="pc-info"><span class="pc-name">${esc(S.profile.name||"Jogador")}</span>`+
+    `<span class="pc-sub"><span class="lvl">Nv ${li.level}</span> · ${esc(li.title)}</span></span>`+
+    `<span class="streak" title="dias seguidos">🔥 ${S.streak.count}</span>`;
   $("#xptitle").textContent = `Nível ${li.level} · ${li.title}`;
-  $("#xpsub").textContent = li.next ? `${S.xp} XP · faltam ${li.toNext} p/ ${li.next.t}` : `${S.xp} XP · nível máximo!`;
+  $("#xpsub").textContent = li.next ? `${S.xp} XP · faltam ${li.toNext} para ${li.next.t}` : `${S.xp} XP · nível máximo!`;
   $("#xpfill").style.width = li.pct+"%";
 }
 
@@ -425,8 +430,9 @@ function viewHome(m){
     const d=DISCIPLINES[key], p=discProgress(key);
     const unlocked=unlockedQuestions(key).length;
     const tp=planTopics(key); const st=tp.filter(t=>t.studied).length;
-    const c=el("div","card disc");
     const locked = unlocked===0;
+    const c=el("div","card disc"+(locked?" lockeddisc":""));
+    c.style.setProperty("--dc", d.color);
     c.innerHTML=`<div class="ic">${d.icon}</div><div class="nm">${esc(d.name)}</div>
       <div class="meta">${locked?`🔒 marque temas no Plano`:`${unlocked} questões liberadas · ${st}/${tp.length} temas`}</div>
       <div class="prog"><span style="width:${p.pct}%;background:${d.color}"></span></div>`;
@@ -762,7 +768,7 @@ function viewBadges(m){
     // barra de progresso rumo ao próximo patamar
     const prevReq = cur>0 ? a.tiers[cur-1] : 0;
     const pct = nextReq!=null ? Math.min(100, Math.round(((val-prevReq)/(nextReq-prevReq))*100)) : 100;
-    const c=el("div","card"+(cur===0?" locked":""));
+    const c=el("div","card ach tier"+cur+(cur===0?" locked":""));
     c.style.padding="14px";
     // pips dos 5 níveis
     let pips=""; for(let i=0;i<5;i++){ pips+=`<span style="opacity:${i<cur?1:.25};font-size:15px">${TIER_EM[i]}</span>`; }
