@@ -17,6 +17,26 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+// Push (notificação mesmo com o app fechado)
+self.addEventListener("push", (e) => {
+  let data = { title: "MedQuest 5", body: "Hora de estudar! 🔥" };
+  try { if (e.data) data = Object.assign(data, e.data.json()); } catch (err) {}
+  e.waitUntil(self.registration.showNotification(data.title, {
+    body: data.body,
+    icon: "./icon-192.png",
+    badge: "./icon-192.png",
+    data: { url: data.url || "./" }
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "./";
+  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ("focus" in c) return c.focus(); }
+    if (clients.openWindow) return clients.openWindow(url);
+  }));
+});
+
 // Network-first: sempre pega a versão nova quando online; usa o cache quando offline.
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;

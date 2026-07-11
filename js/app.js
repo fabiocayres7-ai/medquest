@@ -321,31 +321,34 @@ function provider(){
 function online(){ return provider()!=="local"; }
 function pagesBase(){ return "https://"+CFG.GH_OWNER+".github.io/"+CFG.GH_REPO; }
 
+let _syncT=null;
 async function syncOnline(){
-  // Supabase sincroniza sozinho; GitHub usa envio manual (botão Publicar).
+  // Supabase sincroniza sozinho (com debounce); GitHub usa envio manual (botão Publicar).
   if(provider()!=="supabase" || !S.profile.name) return;
-  try{
-    await fetch(CFG.SUPABASE_URL+"/rest/v1/leaderboard",{
+  clearTimeout(_syncT);
+  _syncT=setTimeout(()=>{ // coalesce rajadas de respostas em 1 requisição
+    fetch(CFG.SUPABASE_URL+"/rest/v1/leaderboard",{
       method:"POST",
-      headers:{ "apikey":CFG.SUPABASE_ANON_KEY, "Authorization":"Bearer "+CFG.SUPABASE_ANON_KEY,
-        "Content-Type":"application/json", "Prefer":"resolution=merge-duplicates" },
+      headers:supaHeaders({Prefer:"resolution=merge-duplicates"}),
       body:JSON.stringify([{ player_id:S.profile.id, name:S.profile.name, turma:S.profile.turma,
         xp:S.xp, level:levelInfo(S.xp).level, streak:S.streak.count,
-        answered:S.stats.answered,
+        answered:S.stats.answered, studied:studiedCount().studied,
+        weekly_xp:weeklyXP(), week:weekStr(),
         accuracy:S.stats.answered?Math.round(S.stats.correct/S.stats.answered*100):0 }])
-    });
-  }catch(e){}
+    }).catch(()=>{});
+  }, 2500);
 }
 async function fetchOnline(){
   const p=provider();
   if(p==="supabase"){
     try{
       const url=CFG.SUPABASE_URL+"/rest/v1/leaderboard?select=*&turma=eq."+encodeURIComponent(S.profile.turma)+"&order=xp.desc&limit=100";
-      const res=await fetch(url,{headers:{ "apikey":CFG.SUPABASE_ANON_KEY, "Authorization":"Bearer "+CFG.SUPABASE_ANON_KEY }});
+      const res=await fetch(url,{headers:supaHeaders()});
       if(!res.ok) return null;
-      const data=await res.json();
-      return data.map(d=>({id:d.player_id,name:d.name,xp:d.xp,level:d.level,streak:d.streak,
-        answered:d.answered,accuracy:d.accuracy,title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t}));
+      const data=await res.json(); const cw=weekStr();
+      return data.map(d=>({id:d.player_id,name:d.name,xp:d.xp||0,level:d.level||1,streak:d.streak||0,
+        answered:d.answered||0, studied:d.studied||0, weeklyXp:(d.week===cw?(d.weekly_xp||0):0),
+        accuracy:d.accuracy||0, title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t}));
     }catch(e){ return null; }
   }
   if(p==="github"){
@@ -1378,6 +1381,14 @@ function viewBadges(m){
     save(); toast("Lembrete "+(rcb.checked?"ativado":"desativado")+" ✅"); };
   rsave.onclick=applyR; rcb.onchange=()=>{ if(rcb.checked){ try{ if(window.Notification&&Notification.permission==="default") Notification.requestPermission(); }catch(e){} } };
   rcard.appendChild(rsave);
+  // Push (app fechado)
+  if(pushSupported()){
+    const pOn=!!(S.settings&&S.settings.push);
+    rcard.appendChild(el("div","small muted mt","🔔 Push (recebe mesmo com o app fechado):"));
+    const pbtn=el("button","btn ghost sm mt", pOn?"🔕 Desativar push":"🔔 Ativar push (app fechado)");
+    pbtn.onclick=async()=>{ if(pOn){ await unsubscribePush(); } else { await subscribePush(); } render(); };
+    rcard.appendChild(pbtn);
+  }
   m.appendChild(rcard);
 
   // Análise dos erros ("por que errei")
@@ -1701,6 +1712,34 @@ async function muralPost(text, topic){
     return res.ok;
   }catch(e){ return false; }
 }
+// ---- Push (notificação com app fechado) ----
+function urlB64ToUint8(base64){
+  const pad="=".repeat((4-base64.length%4)%4);
+  const b=(base64+pad).replace(/-/g,"+").replace(/_/g,"/");
+  const raw=atob(b); const arr=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) arr[i]=raw.charCodeAt(i); return arr;
+}
+function pushSupported(){ return ("serviceWorker" in navigator) && ("PushManager" in window) && supaOn() && !!CFG.VAPID_PUBLIC; }
+async function subscribePush(){
+  if(!pushSupported()){ toast("Push não disponível neste navegador."); return false; }
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted"){ toast("Permissão de notificação negada."); return false; }
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:urlB64ToUint8(CFG.VAPID_PUBLIC)});
+    const body=[{ player_id:S.profile.id, name:S.profile.name||"", turma:S.profile.turma||"",
+      time:(S.settings&&S.settings.reminder&&S.settings.reminder.time)||"19:00", sub:JSON.stringify(sub) }];
+    const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/push_subs",{method:"POST", headers:supaHeaders({Prefer:"resolution=merge-duplicates"}), body:JSON.stringify(body)});
+    if(res.ok){ if(!S.settings)S.settings={}; S.settings.push=true; save(); toast("Push ativado! 🔔"); return true; }
+    toast("Falha ao registrar push ("+res.status+"). A tabela push_subs já existe?"); return false;
+  }catch(e){ toast("Não consegui ativar o push."); return false; }
+}
+async function unsubscribePush(){
+  try{ const reg=await navigator.serviceWorker.ready; const sub=await reg.pushManager.getSubscription(); if(sub) await sub.unsubscribe(); }catch(e){}
+  try{ await fetch(CFG.SUPABASE_URL+"/rest/v1/push_subs?player_id=eq."+encodeURIComponent(S.profile.id), {method:"DELETE", headers:supaHeaders()}); }catch(e){}
+  if(!S.settings)S.settings={}; S.settings.push=false; save(); toast("Push desativado.");
+}
 
 /* ---------- Compartilhar progresso (imagem) ---------- */
 function shareCard(){
@@ -1772,6 +1811,6 @@ ensureMissions();
 for(const a of ACHIEVEMENTS){ const t=achTier(a); if((S.ach[a.id]||0)<t) S.ach[a.id]=t; }
 save();
 render();
-if(!S.profile.name) onboard();
+if(!S.profile.name) onboard(); else syncOnline(); // publica no ranking (Supabase) ao abrir
 window.MEDQUEST_IMPORT = importCode; // util para debug/console
 })();
