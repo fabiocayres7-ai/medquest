@@ -77,6 +77,11 @@ Dica: dividam as disciplinas entre o grupo e cada um cria 10 questões da sua pa
 - **Plano de Estudos**: marque cada tema conforme estuda — **as questões só caem dos temas marcados**. 82 temas mapeados ao conteúdo real do semestre.
 - **Resumos**: aba com resumos objetivos por tema (vá adicionando os seus em `js/content.js`).
 - **Imagens**: módulo de reconhecimento visual (patologia/radiologia) — bate o olho nos achados e diz o diagnóstico. Traz esquemas originais e aceita suas próprias imagens.
+- **Modo Prova** cronometrado (com revisão ao final), **Refazer erros**, **Questões marcadas** (⭐) e **pontos fracos** por tema.
+- **Duelo**: desafie um colega pelas mesmas questões (por código) e veja quem vence.
+- **Pomodoro** integrado (25/5) com avisos de foco/descanso e XP por sessão.
+- **Gráfico de evolução** (XP e % de acerto por dia) e **anotações pessoais** por tema.
+- **Ranking semanal** além do total, com meta da semana.
 - **12 níveis** com curva exigente: Calouro → Interno → Plantonista → Residente R1/R2 → Preceptor → Especialista → Chefe de Equipe → Professor → Livre-Docente → Notório Saber → **Lenda da Mandic** (35 000 XP).
 - **XP** por acerto (mais para questões difíceis) e por revisão de flashcard; **bônus de streak**.
 - **13 conquistas com 5 patamares cada** (🥉 Bronze → 🥈 Prata → 🥇 Ouro → 🏆 Platina → 💠 Diamante) — 65 patamares para colecionar.

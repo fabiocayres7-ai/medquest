@@ -69,6 +69,8 @@ const ACHIEVEMENTS = [
     metric:s=>discCorrect(s,"terap"), tiers:[8,20,40,70,110] },
   { id:"geral", em:"🩺", nm:"Clínico Geral", unit:"disciplinas dominadas",
     metric:s=>disciplinesWith(s,10), tiers:[2,4,6,7,8] },
+  { id:"foco", em:"🍅", nm:"Foco Total", unit:"pomodoros",
+    metric:s=>s.stats.pomodoros||0, tiers:[4,12,30,60,120] },
 ];
 // patamar atual alcançado (0 = nenhum, 5 = Diamante) para uma conquista
 function achTier(a){ const v=a.metric(S); let t=0; for(let i=0;i<a.tiers.length;i++){ if(v>=a.tiers[i]) t=i+1; } return t; }
@@ -78,7 +80,7 @@ function freshState(){
   return {
     profile:{ id:"p_"+Math.abs(hash(String(navigator.userAgent+performance.now()+"x"))).toString(36), name:"", turma:CFG.TURMA },
     xp:0,
-    stats:{answered:0, correct:0, reviews:0, activeDays:0, perfectQuizzes:0, imagesSeen:0},
+    stats:{answered:0, correct:0, reviews:0, activeDays:0, perfectQuizzes:0, imagesSeen:0, pomodoros:0},
     studied:{},                   // {"disc::topic": true} — temas marcados como estudados
     byDisc:{},                    // {disc:{answered,correct}}
     byTopic:{},                   // {"disc::topic": {answered,correct}}
@@ -86,6 +88,9 @@ function freshState(){
     errors:{},                    // {qid:true} — questões erradas ainda não recuperadas
     bookmarks:{},                 // {qid:true} — questões marcadas para revisar
     weekly:{week:"", xp:0},       // XP da semana (competição semanal)
+    history:{},                   // {"AAAA-MM-DD": {xp,answered,correct}} — evolução diária
+    notes:{},                     // {"disc::topic": "anotação pessoal"}
+    duels:[],                     // histórico de duelos [{opp,my,their,res,date}]
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
@@ -123,11 +128,13 @@ function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
 /* ---------- XP / streak / progresso ---------- */
+function histToday(){ const t=todayStr(); if(!S.history[t]) S.history[t]={xp:0,answered:0,correct:0}; return S.history[t]; }
 function addXP(n){
   S.xp+=n;
   const w=weekStr();
   if(!S.weekly || S.weekly.week!==w) S.weekly={week:w, xp:0};
   S.weekly.xp+=n;
+  histToday().xp+=n;
 }
 function weeklyXP(){ return (S.weekly && S.weekly.week===weekStr()) ? S.weekly.xp : 0; }
 function touchStreak(){
@@ -143,6 +150,7 @@ function recordAnswer(q, correct){
   const disc=q.discipline, difficulty=q.difficulty;
   touchStreak();
   S.stats.answered++;
+  const h=histToday(); h.answered++; if(correct) h.correct++;
   if(!S.byDisc[disc]) S.byDisc[disc]={answered:0,correct:0};
   S.byDisc[disc].answered++;
   const tk=tkey(disc,q.topic);
@@ -379,7 +387,7 @@ function render(){
   else if(route==="quiz") viewQuiz(main);
   else if(route==="flash") viewFlash(main);
   else if(route==="images") viewImages(main);
-  else if(route==="summaries") viewSummaries(main);
+  else if(route==="summaries") viewResumos(main);
   else if(route==="rank") viewRank(main);
   else if(route==="badges") viewBadges(main);
   renderNav();
@@ -609,6 +617,66 @@ function viewSummaries(m){
   }
 }
 
+/* ---------- Anotações pessoais + Resumos (v2) ---------- */
+function getNote(disc,topic){ return S.notes[tkey(disc,topic)]||""; }
+function hasNote(disc,topic){ return !!(S.notes[tkey(disc,topic)]||"").trim(); }
+function setNote(disc,topic,txt){ const k=tkey(disc,topic); if(txt.trim()) S.notes[k]=txt; else delete S.notes[k]; save(); }
+let noteSel=null;
+function noteEditor(disc,topic){
+  const box=el("div","mt hidden");
+  const ta=el("textarea","input"); ta.placeholder="Escreva sua anotação sobre "+topic+"..."; ta.value=getNote(disc,topic);
+  ta.style.minHeight="70px";
+  ta.onchange=()=>{ setNote(disc,topic,ta.value); toast("Anotação salva ✍️"); };
+  box.appendChild(ta); return box;
+}
+function viewResumos(m){
+  const total=Object.keys(DISCIPLINES).reduce((a,d)=>a+planTopics(d).length,0);
+  const withS=Object.keys(SUMMARIES).length, withN=Object.keys(S.notes||{}).length;
+  const head=el("div","card");
+  head.innerHTML=`<h3>📖 Resumos & Anotações</h3>
+    <p class="muted small">Toque num tema para abrir o resumo. Use <b>✍️ Anotar</b> para escrever suas próprias notas (salvas no seu aparelho).</p>
+    <div class="muted small mt">${withS}/${total} temas com resumo · ${withN} anotações suas</div>`;
+  m.appendChild(head);
+
+  for(const disc in DISCIPLINES){
+    const d=DISCIPLINES[disc];
+    const topics=planTopics(disc).filter(t=>hasSummary(disc,t.topic)||hasNote(disc,t.topic));
+    if(!topics.length) continue;
+    const card=el("div","card mt");
+    card.appendChild(el("div","",`<b>${d.icon} ${esc(d.name)}</b>`));
+    topics.forEach(t=>{
+      const has=hasSummary(disc,t.topic);
+      const item=el("div"); item.style.cssText="border-top:1px solid var(--stroke);margin-top:10px;padding-top:10px";
+      const btn=el("button","opt"); btn.style.marginBottom="0";
+      btn.innerHTML=`${has?"📖":"📝"} <b>${esc(t.topic)}</b> ${hasNote(disc,t.topic)?"<span class='muted small'>✍️</span>":""} <span class="pill" style="float:right">${t.phase}</span>`;
+      const body=el("div","explain mt hidden"); if(has) body.innerHTML=esc(SUMMARIES[tkey(disc,t.topic)]).replace(/\n/g,"<br>");
+      const noteBox=noteEditor(disc,t.topic);
+      const nbtn=el("button","btn ghost sm mt","✍️ Anotar"); nbtn.onclick=()=>noteBox.classList.toggle("hidden");
+      btn.onclick=()=>{ if(has) body.classList.toggle("hidden"); else noteBox.classList.toggle("hidden"); };
+      item.appendChild(btn); if(has) item.appendChild(body); item.appendChild(nbtn); item.appendChild(noteBox);
+      card.appendChild(item);
+    });
+    m.appendChild(card);
+  }
+
+  // Anotar qualquer tema
+  const add=el("div","card mt");
+  add.innerHTML=`<b>✍️ Anotar um tema</b><p class="muted small mt mb">Escolha qualquer tema do plano para escrever suas notas.</p>`;
+  const sel=el("select","input");
+  sel.appendChild(el("option","","— escolher tema —"));
+  for(const disc in DISCIPLINES){
+    const grp=document.createElement("optgroup"); grp.label=DISCIPLINES[disc].name;
+    planTopics(disc).forEach(t=>{ const o=document.createElement("option"); o.value=tkey(disc,t.topic); o.textContent=t.topic; grp.appendChild(o); });
+    sel.appendChild(grp);
+  }
+  sel.value=noteSel||"";
+  sel.onchange=()=>{ noteSel=sel.value||null; render(); };
+  add.appendChild(sel);
+  if(noteSel){ const i=noteSel.indexOf("::"); const dsc=noteSel.slice(0,i), tp=noteSel.slice(i+2);
+    const ed=noteEditor(dsc,tp); ed.classList.remove("hidden"); add.appendChild(ed); }
+  m.appendChild(add);
+}
+
 /* ---------- QUIZ / PRÁTICA ---------- */
 let quizTimerId=null;
 function stopQuizTimer(){ if(quizTimerId){ clearInterval(quizTimerId); quizTimerId=null; } }
@@ -642,6 +710,27 @@ function startSession(opts){
 }
 // compat: cards de disciplina e "jogar de novo"
 function startQuiz(disc, n, isSim=false){ startSession({source:"studied", disc, n, mode:isSim?"sim":"quiz"}); }
+
+// ---- Duelo (assíncrono, via código) ----
+function startFromQuestions(qs, duel){
+  if(!qs.length){ toast("Sem questões para o duelo."); return; }
+  quiz={pool:qs, idx:0, correctCount:0, answered:false, mode:"quiz", source:"duel", exam:false,
+    total:qs.length, answers:new Array(qs.length).fill(null), scored:false, endAt:null, duel};
+  go("quiz");
+}
+function startDuelCreate(n){
+  const pool=buildPool("studied","all");
+  if(!pool.length){ toast("Libere temas no Plano para criar um duelo 📋"); go("plan"); return; }
+  startFromQuestions(shuffle(pool).slice(0, Math.min(n||8, pool.length)), {role:"create"});
+}
+function startDuelAccept(code){
+  let data; try{ data=JSON.parse(decodeURIComponent(escape(atob(code.trim())))); }catch(e){ toast("Código de duelo inválido."); return; }
+  if(!data || !Array.isArray(data.qs)){ toast("Código de duelo inválido."); return; }
+  const qs=data.qs.map(id=>QUESTIONS.find(q=>q.id===id)).filter(Boolean);
+  if(!qs.length){ toast("As questões do duelo não foram encontradas (versões diferentes?)."); return; }
+  if(qs.length<data.qs.length) toast("Aviso: algumas questões do duelo não existem aqui.");
+  startFromQuestions(qs, {role:"accept", by:data.by||"Colega", oppC:data.c||0, oppN:data.n||qs.length});
+}
 
 function viewQuiz(m){
   if(!quiz){ const p=el("div","card center"); p.innerHTML=`<p class="muted">Escolha um modo na tela inicial.</p>`;
@@ -739,15 +828,41 @@ function quizResult(m){
     <h2>${quiz.correctCount}/${quiz.total} acertos (${pct}%)</h2>
     <p class="muted">${pct>=80?"Excelente! Você dominou este bloco.":pct>=60?"Bom trabalho — revise os erros abaixo.":"Continue treinando, o próximo vai melhor!"}</p>`;
   const row=el("div","btnrow center mt");row.style.justifyContent="center";
-  const b1=el("button","btn","🔁 De novo");b1.onclick=()=>startSession({source:quiz.source, n:quiz.total, exam:quiz.exam, minutes: quiz.exam?15:0});
-  if(quiz.answers.some((a,idx)=>a!==quiz.pool[idx].answer)){
-    const be=el("button","btn ghost","🔁 Refazer só os erros");be.onclick=()=>startSession({source:"errors",n:20});
-    row.appendChild(be);
+  if(!quiz.duel){
+    const b1=el("button","btn","🔁 De novo");b1.onclick=()=>startSession({source:quiz.source, n:quiz.total, exam:quiz.exam, minutes: quiz.exam?15:0});
+    row.appendChild(b1);
+    if(quiz.answers.some((a,idx)=>a!==quiz.pool[idx].answer)){
+      const be=el("button","btn ghost","🔁 Refazer só os erros");be.onclick=()=>startSession({source:"errors",n:20});
+      row.appendChild(be);
+    }
   }
   const b2=el("button","btn ghost","🏠 Início");b2.onclick=()=>{quiz=null;go("home");};
-  row.append(b1,b2);
+  row.append(b2);
   c.appendChild(row);
   m.appendChild(c);
+
+  // ---- Duelo ----
+  if(quiz.duel){
+    const dcard=el("div","card mt center");
+    if(quiz.duel.role==="create"){
+      const code=btoa(unescape(encodeURIComponent(JSON.stringify({v:1, by:S.profile.name||"Jogador", qs:quiz.pool.map(q=>q.id), c:quiz.correctCount, n:quiz.total}))));
+      dcard.innerHTML=`<div style="font-size:36px">⚔️</div><h3>Desafio criado!</h3>
+        <p class="muted small">Você fez <b>${quiz.correctCount}/${quiz.total}</b>. Envie o código abaixo para um colega — ele responde as MESMAS questões e o app diz quem venceu.</p>`;
+      const ta=el("textarea","input"); ta.readOnly=true; ta.value=code; ta.onclick=()=>{ta.select();document.execCommand&&document.execCommand("copy");toast("Código do duelo copiado!");};
+      dcard.appendChild(ta);
+    } else {
+      // aceitou: compara
+      const my=quiz.correctCount, their=quiz.duel.oppC||0;
+      const res = my>their?"win":my<their?"lose":"draw";
+      if(!quiz.duelSaved){ S.duels.unshift({opp:quiz.duel.by||"Colega", my, their, res, date:todayStr()}); S.duels=S.duels.slice(0,20); if(res==="win") addXP(20); quiz.duelSaved=true; save(); renderTopbar(); checkBadges(); }
+      const em = res==="win"?"🏆":res==="lose"?"😔":"🤝";
+      const msg = res==="win"?"Você venceu!":res==="lose"?"Você perdeu — bola pra frente!":"Empate!";
+      dcard.innerHTML=`<div style="font-size:40px">${em}</div><h3>${msg}</h3>
+        <div style="font-size:22px;font-weight:800;margin:8px 0">Você ${my} × ${their} ${esc(quiz.duel.by||"Colega")}</div>
+        ${res==="win"?'<p class="muted small">+20 XP de bônus de vitória 🎉</p>':""}`;
+    }
+    m.appendChild(dcard);
+  }
 
   // revisão (modo prova mostra tudo; prática mostra os erros)
   m.appendChild(el("div","sectitle","Revisão"));
@@ -905,6 +1020,25 @@ function viewRank(m){
   renderRankList(list, localRanking());
   m.appendChild(list);
 
+  // ---- Duelo ----
+  const duel=el("div","card mt");
+  duel.innerHTML=`<h3>⚔️ Duelo</h3><p class="muted small mb">Desafie um colega: vocês respondem as MESMAS questões e o app diz quem venceu. Funciona por código (sem servidor).</p>`;
+  const drow=el("div","btnrow");
+  const dc=el("button","btn","⚔️ Criar desafio (8 questões)"); dc.onclick=()=>startDuelCreate(8); drow.appendChild(dc);
+  duel.appendChild(drow);
+  const dinp=el("textarea","input"); dinp.placeholder="Cole aqui o código de duelo de um colega...";
+  duel.appendChild(el("div","small muted mt","Aceitar um desafio:"));
+  duel.appendChild(dinp);
+  const da=el("button","btn ghost sm mt","🎯 Aceitar e jogar"); da.onclick=()=>{ if(dinp.value.trim()) startDuelAccept(dinp.value); }; duel.appendChild(da);
+  if(S.duels && S.duels.length){
+    duel.appendChild(el("div","small muted mt","Últimos duelos:"));
+    S.duels.slice(0,5).forEach(x=>{
+      const em=x.res==="win"?"🏆":x.res==="lose"?"😔":"🤝";
+      duel.appendChild(el("div","small",`${em} vs ${esc(x.opp)} — ${x.my} × ${x.their}`));
+    });
+  }
+  m.appendChild(duel);
+
   if(online()){
     fetchOnline().then(rows=>{ if(rows&&rows.length){
       if(!rows.find(r=>r.id===S.profile.id)) rows.push(myRow());
@@ -944,6 +1078,37 @@ function renderRankList(container, rows){
   if(rows.length<=1){ container.appendChild(el("div","muted small center mt","Adicione colegas abaixo para começar a competição! 👇")); }
 }
 
+/* ---------- Gráfico de evolução ---------- */
+function lastDays(n){
+  const arr=[]; const base=new Date();
+  for(let i=n-1;i>=0;i--){ const t=new Date(base); t.setDate(base.getDate()-i);
+    const key=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
+    const h=S.history[key]||{xp:0,answered:0,correct:0};
+    arr.push({day:t.getDate(), xp:h.xp||0, answered:h.answered||0, correct:h.correct||0, acc:h.answered?Math.round(h.correct/h.answered*100):null});
+  }
+  return arr;
+}
+function evolutionSVG(days){
+  const data=lastDays(days), W=320, H=150, pad=22, cw=(W-2*pad)/days;
+  const maxXp=Math.max(10, ...data.map(d=>d.xp));
+  const bh=H-2*pad;
+  let bars="", pts=[], dots="", labels="";
+  data.forEach((d,i)=>{
+    const x=pad+i*cw, bw=Math.max(3,cw*0.55);
+    const h=Math.round(d.xp/maxXp*bh);
+    bars+=`<rect x="${(x+cw*0.22).toFixed(1)}" y="${H-pad-h}" width="${bw.toFixed(1)}" height="${h}" rx="2" fill="url(#gb)"/>`;
+    if(d.acc!=null){ const px=x+cw/2, py=pad+(100-d.acc)/100*bh; pts.push(px.toFixed(1)+","+py.toFixed(1));
+      dots+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.6" fill="#34d399"/>`; }
+    if(i%2===0||days<=7) labels+=`<text x="${(x+cw/2).toFixed(1)}" y="${H-6}" fill="#5f6d92" font-size="8" text-anchor="middle">${d.day}</text>`;
+  });
+  const line = pts.length>1 ? `<polyline points="${pts.join(" ")}" fill="none" stroke="#34d399" stroke-width="1.6"/>` : "";
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%">
+    <defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b06cff"/><stop offset="1" stop-color="#7c8cff"/></linearGradient></defs>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#243154" stroke-width="1"/>
+    <line x1="${pad}" y1="${H-pad}" x2="${W-4}" y2="${H-pad}" stroke="#243154" stroke-width="1"/>
+    ${bars}${line}${dots}${labels}</svg>`;
+}
+
 /* ---------- BADGES ---------- */
 function viewBadges(m){
   const head=el("div","card");
@@ -951,6 +1116,13 @@ function viewBadges(m){
     <p class="muted small">Cada conquista tem 5 patamares: 🥉 Bronze · 🥈 Prata · 🥇 Ouro · 🏆 Platina · 💠 Diamante. Quanto maior, mais XP.</p>
     <div class="muted small mt">${achievementsUnlocked()}/${achievementsMax()} patamares conquistados</div>`;
   m.appendChild(head);
+
+  // Evolução (últimos 14 dias)
+  m.appendChild(el("div","sectitle","Evolução (14 dias)"));
+  const ch=el("div","card");
+  ch.innerHTML=`<div style="display:flex;gap:16px;font-size:11px;color:var(--muted);margin-bottom:6px">
+      <span>🟪 XP por dia</span><span>🟢 % de acerto</span></div>`+evolutionSVG(14);
+  m.appendChild(ch);
 
   const grid=el("div","grid cols2 mt");
   ACHIEVEMENTS.forEach(a=>{
@@ -1046,7 +1218,49 @@ function onboard(){
   mo.appendChild(btn); bg.appendChild(mo); document.body.appendChild(bg);
 }
 
+/* ---------- Pomodoro ---------- */
+const POMO={focusMin:25, breakMin:5};
+let pomo={phase:"idle", left:0, running:false};
+let pomoIv=null;
+function fmtT(s){ return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }
+function pomoBeep(){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return; const ac=new AC(); const o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=880; g.gain.value=0.07; o.start(); setTimeout(()=>{o.stop();ac.close&&ac.close();},420); }catch(e){} }
+function pomoNotify(msg){ toast(msg); try{ if(window.Notification && Notification.permission==="granted") new Notification("MedQuest 5",{body:msg}); }catch(e){} pomoBeep(); }
+function pomoStart(phase){
+  pomo.phase=phase; pomo.left=(phase==="focus"?POMO.focusMin:POMO.breakMin)*60; pomo.running=true;
+  try{ if(window.Notification && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
+  clearInterval(pomoIv);
+  pomoIv=setInterval(()=>{
+    if(!pomo.running) return;
+    pomo.left--;
+    if(pomo.left<=0){
+      if(pomo.phase==="focus"){ S.stats.pomodoros=(S.stats.pomodoros||0)+1; touchStreak(); addXP(15); save(); renderTopbar(); checkBadges();
+        pomoNotify("Foco concluído! +15 XP 🍅 Descanse 5 min ☕"); pomoStart("break"); }
+      else { pomoNotify("Descanso acabou! Bora estudar 💪"); pomoStart("focus"); }
+      return;
+    }
+    pomoRender();
+  },1000);
+  pomoRender();
+}
+function pomoTogglePause(){ pomo.running=!pomo.running; pomoRender(); }
+function pomoStop(){ clearInterval(pomoIv); pomoIv=null; pomo={phase:"idle",left:0,running:false}; pomoRender(); }
+function pomoRender(){
+  let box=$("#pomo"); if(!box){ box=el("div"); box.id="pomo"; document.body.appendChild(box); }
+  if(pomo.phase==="idle"){
+    box.className="pomo idle";
+    box.innerHTML=`<button class="pomo-pill" id="pomo-main">🍅 Pomodoro</button>`;
+    $("#pomo-main").onclick=()=>pomoStart("focus");
+  } else {
+    const icon=pomo.phase==="focus"?"🍅":"☕";
+    box.className="pomo "+pomo.phase+(pomo.running?"":" paused");
+    box.innerHTML=`<button class="pomo-pill" id="pomo-main" title="pausar/retomar">${icon} ${fmtT(pomo.left)}${pomo.running?"":" ⏸"}</button><button class="pomo-x" id="pomo-x" title="parar">✕</button>`;
+    $("#pomo-main").onclick=pomoTogglePause;
+    $("#pomo-x").onclick=pomoStop;
+  }
+}
+
 /* ---------- Boot ---------- */
+pomoRender();
 ensureMissions();
 // sincroniza conquistas com o progresso atual (sem duplicar patamares já registrados)
 for(const a of ACHIEVEMENTS){ const t=achTier(a); if((S.ach[a.id]||0)<t) S.ach[a.id]=t; }
