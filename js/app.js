@@ -80,7 +80,7 @@ function freshState(){
   return {
     profile:{ id:"p_"+Math.abs(hash(String(navigator.userAgent+performance.now()+"x"))).toString(36), name:"", turma:CFG.TURMA },
     xp:0,
-    stats:{answered:0, correct:0, reviews:0, activeDays:0, perfectQuizzes:0, imagesSeen:0, pomodoros:0},
+    stats:{answered:0, correct:0, reviews:0, activeDays:0, perfectQuizzes:0, imagesSeen:0, pomodoros:0, focusMin:0, quizMin:0},
     studied:{},                   // {"disc::topic": true} — temas marcados como estudados
     byDisc:{},                    // {disc:{answered,correct}}
     byTopic:{},                   // {"disc::topic": {answered,correct}}
@@ -91,7 +91,8 @@ function freshState(){
     history:{},                   // {"AAAA-MM-DD": {xp,answered,correct}} — evolução diária
     notes:{},                     // {"disc::topic": "anotação pessoal"}
     duels:[],                     // histórico de duelos [{opp,my,their,res,date}]
-    settings:{pomoFocus:25, pomoBreak:5, pomoGoal:4, theme:"dark"}, // config
+    settings:{pomoFocus:25, pomoBreak:5, pomoGoal:4, theme:"dark",
+              reminder:{enabled:false, time:"19:00", lastDate:""}}, // config
     dailyQ:{date:"", done:false, correct:false}, // questão do dia
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
@@ -286,7 +287,7 @@ function gradeCard(cardId, q){ // q: 0 again,1 hard,2 good,3 easy
 function myRow(){ const li=levelInfo(S.xp); return {
   id:S.profile.id, name:S.profile.name||"Eu", turma:S.profile.turma,
   xp:S.xp, weeklyXp:weeklyXP(), week:weekStr(), level:li.level, title:li.title, streak:S.streak.count,
-  answered:S.stats.answered,
+  answered:S.stats.answered, studied:studiedCount().studied,
   accuracy:S.stats.answered? Math.round(S.stats.correct/S.stats.answered*100):0
 };}
 let rankMode="total"; // "total" | "semana"
@@ -353,7 +354,7 @@ async function fetchOnline(){
       const j=await res.json(); const players=j.players||{}; const cw=weekStr();
       return Object.keys(players).map(id=>{ const d=players[id]; return {
         id, name:d.name, xp:d.xp||0, weeklyXp:(d.week===cw?(d.weeklyXp||0):0), level:d.level||1, streak:d.streak||0,
-        answered:d.answered||0, accuracy:d.accuracy||0, turma:d.turma,
+        answered:d.answered||0, studied:d.studied||0, accuracy:d.accuracy||0, turma:d.turma,
         title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t }; })
         .filter(r=>!r.turma || r.turma===S.profile.turma);
     }catch(e){ return null; }
@@ -790,6 +791,7 @@ function startDaily(){
 }
 
 function viewQuiz(m){
+  if(quiz && !quiz.startedAt) quiz.startedAt=Date.now();
   if(!quiz){ const p=el("div","card center"); p.innerHTML=`<p class="muted">Escolha um modo na tela inicial.</p>`;
     const b=el("button","btn mt","🎲 Desafio rápido");b.onclick=()=>startSession({source:"studied",n:10});p.appendChild(b); m.appendChild(p); return; }
   if(quiz.idx>=quiz.pool.length){ return quizResult(m); }
@@ -871,6 +873,12 @@ function answer(i,body,opts,q){
 }
 function quizResult(m){
   stopQuizTimer();
+  // tempo gasto (limitado a 3 min/questão para evitar inflar)
+  if(!quiz.timeAdded && quiz.startedAt){
+    const mins=Math.min(quiz.total*3, Math.round((Date.now()-quiz.startedAt)/60000));
+    if(mins>0){ S.stats.quizMin=(S.stats.quizMin||0)+mins; const h=histToday(); h.quizMin=(h.quizMin||0)+mins; }
+    quiz.timeAdded=true; save();
+  }
   // pontua o modo prova ao finalizar
   if(quiz.exam && !quiz.scored){
     quiz.correctCount=0;
@@ -1079,6 +1087,12 @@ function viewRank(m){
   renderRankList(list, localRanking());
   m.appendChild(list);
 
+  // Progresso da turma
+  m.appendChild(el("div","sectitle","Progresso da turma"));
+  const turmaBox=el("div"); turmaBox.id="turmabox";
+  renderTurma(turmaBox, localRanking());
+  m.appendChild(turmaBox);
+
   // ---- Duelo ----
   const duel=el("div","card mt");
   duel.innerHTML=`<h3>⚔️ Duelo</h3><p class="muted small mb">Desafie um colega: vocês respondem as MESMAS questões e o app diz quem venceu. Funciona por código (sem servidor).</p>`;
@@ -1103,7 +1117,7 @@ function viewRank(m){
       if(!rows.find(r=>r.id===S.profile.id)) rows.push(myRow());
       // mistura com colegas locais que ainda não publicaram
       S.friends.forEach(f=>{ if(!rows.find(r=>r.id===f.id)) rows.push(f); });
-      rows.sort((a,b)=>rankKey(b)-rankKey(a)); renderRankList(list,rows);
+      rows.sort((a,b)=>rankKey(b)-rankKey(a)); renderRankList(list,rows); renderTurma(turmaBox,rows);
     }});
   }
 
@@ -1136,6 +1150,43 @@ function renderRankList(container, rows){
   });
   if(rows.length<=1){ container.appendChild(el("div","muted small center mt","Adicione colegas abaixo para começar a competição! 👇")); }
 }
+function renderTurma(container, rows){
+  container.innerHTML="";
+  if(!rows || rows.length<=1){ container.appendChild(el("div","card muted small","Você ainda está sozinho aqui. Convide os colegas (código de jogador ou duelo, abaixo) para acompanhar o progresso da turma. 👥")); return; }
+  const planTotal=studiedCount().total||82;
+  const totXp=rows.reduce((a,r)=>a+(r.xp||0),0);
+  const accs=rows.filter(r=>(r.answered||0)>0);
+  const avgAcc=accs.length?Math.round(accs.reduce((a,r)=>a+(r.accuracy||0),0)/accs.length):0;
+  const maxStreak=Math.max(0,...rows.map(r=>r.streak||0));
+  const totQ=rows.reduce((a,r)=>a+(r.answered||0),0);
+  const agg=el("div","card");
+  agg.innerHTML=`<div class="tiles">
+     <div class="tile"><div class="em">👥</div><div class="big">${rows.length}</div><div class="lbl">colegas</div></div>
+     <div class="tile"><div class="em">⭐</div><div class="big">${totXp}</div><div class="lbl">XP da turma</div></div>
+     <div class="tile"><div class="em">🎯</div><div class="big">${avgAcc}%</div><div class="lbl">acerto médio</div></div>
+     <div class="tile"><div class="em">🔥</div><div class="big">${maxStreak}</div><div class="lbl">maior streak</div></div>
+     <div class="tile"><div class="em">❓</div><div class="big">${totQ}</div><div class="lbl">questões</div></div>
+   </div>`;
+  container.appendChild(agg);
+  rows.forEach(r=>{
+    const isMe=r.id===S.profile.id, li=levelInfo(r.xp||0);
+    const planPct=Math.min(100,Math.round((r.studied||0)/planTotal*100));
+    const initial=(r.name||"?").trim().charAt(0).toUpperCase()||"?";
+    const c=el("div","card mt"); if(isMe) c.style.borderColor="var(--accent)";
+    c.innerHTML=`<div style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800;background:var(--grad);color:#fff;flex:0 0 auto">${esc(initial)}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:800">${esc(r.name||"Jogador")}${isMe?" (você)":""}</div>
+          <div class="muted small">Nv ${r.level} · ${esc(r.title||"")}</div></div>
+        <div style="text-align:right"><div style="font-weight:800;color:var(--gold)">${r.xp||0} XP</div><div class="muted small">🔥${r.streak||0} · ${r.weeklyXp||0}/sem</div></div>
+      </div>
+      <div class="small muted mt">Nível (rumo ao próximo)</div>
+      <div class="prog"><span style="width:${li.pct}%;background:var(--grad)"></span></div>
+      <div class="small muted mt">Plano de estudos: ${r.studied||0}/${planTotal} temas</div>
+      <div class="prog"><span style="width:${planPct}%;background:var(--good)"></span></div>
+      <div class="small muted mt">${r.answered||0} questões respondidas · ${r.accuracy||0}% de acerto</div>`;
+    container.appendChild(c);
+  });
+}
 
 /* ---------- Gráfico de evolução ---------- */
 function lastDays(n){
@@ -1143,7 +1194,7 @@ function lastDays(n){
   for(let i=n-1;i>=0;i--){ const t=new Date(base); t.setDate(base.getDate()-i);
     const key=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
     const h=S.history[key]||{xp:0,answered:0,correct:0};
-    arr.push({day:t.getDate(), xp:h.xp||0, answered:h.answered||0, correct:h.correct||0, acc:h.answered?Math.round(h.correct/h.answered*100):null});
+    arr.push({key, day:t.getDate(), xp:h.xp||0, answered:h.answered||0, correct:h.correct||0, acc:h.answered?Math.round(h.correct/h.answered*100):null});
   }
   return arr;
 }
@@ -1167,6 +1218,23 @@ function evolutionSVG(days){
     <line x1="${pad}" y1="${H-pad}" x2="${W-4}" y2="${H-pad}" stroke="#243154" stroke-width="1"/>
     ${bars}${line}${dots}${labels}</svg>`;
 }
+/* ---------- Tempo de estudo ---------- */
+function studyMinToday(){ const h=S.history[todayStr()]||{}; return (h.focusMin||0)+(h.quizMin||0); }
+function studyMinTotal(){ return (S.stats.focusMin||0)+(S.stats.quizMin||0); }
+function studyMinWeek(){ return lastDays(7).reduce((a,d)=>a+minOf(d.key),0); }
+function minOf(key){ const h=S.history[key]||{}; return (h.focusMin||0)+(h.quizMin||0); }
+function fmtDur(min){ min=Math.round(min); if(min<60) return min+" min"; const h=Math.floor(min/60), m=min%60; return h+"h"+(m?" "+m+"min":""); }
+function minutesSVG(days){
+  const data=lastDays(days).map(d=>({day:d.day, min:minOf(d.key)}));
+  const W=320,H=120,pad=20,cw=(W-2*pad)/days, bh=H-2*pad, maxM=Math.max(20,...data.map(d=>d.min));
+  let bars="",labels="";
+  data.forEach((d,i)=>{ const x=pad+i*cw, bw=Math.max(4,cw*0.6), h=Math.round(d.min/maxM*bh);
+    bars+=`<rect x="${(x+cw*0.2).toFixed(1)}" y="${H-pad-h}" width="${bw.toFixed(1)}" height="${h}" rx="2" fill="url(#gm)"/>`;
+    labels+=`<text x="${(x+cw/2).toFixed(1)}" y="${H-5}" fill="#5f6d92" font-size="8" text-anchor="middle">${d.day}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%">
+    <defs><linearGradient id="gm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs>
+    <line x1="${pad}" y1="${H-pad}" x2="${W-4}" y2="${H-pad}" stroke="#243154" stroke-width="1"/>${bars}${labels}</svg>`;
+}
 
 /* ---------- BADGES ---------- */
 function viewBadges(m){
@@ -1183,6 +1251,41 @@ function viewBadges(m){
   ch.innerHTML=`<div style="display:flex;gap:16px;font-size:11px;color:var(--muted);margin-bottom:6px">
       <span>🟪 XP por dia</span><span>🟢 % de acerto</span></div>`+evolutionSVG(14);
   m.appendChild(ch);
+
+  // Tempo de estudo
+  m.appendChild(el("div","sectitle","Tempo de estudo"));
+  const tcard=el("div","card");
+  const activeD=Object.keys(S.history||{}).filter(k=>minOf(k)>0).length;
+  const avg=activeD?Math.round(studyMinTotal()/activeD):0;
+  tcard.innerHTML=`<div class="tiles" style="margin-bottom:10px">
+      <div class="tile"><div class="em">⏱️</div><div class="big">${fmtDur(studyMinTotal())}</div><div class="lbl">total</div></div>
+      <div class="tile"><div class="em">📅</div><div class="big">${fmtDur(studyMinWeek())}</div><div class="lbl">esta semana</div></div>
+      <div class="tile"><div class="em">☀️</div><div class="big">${fmtDur(studyMinToday())}</div><div class="lbl">hoje</div></div>
+      <div class="tile"><div class="em">📈</div><div class="big">${fmtDur(avg)}</div><div class="lbl">média/dia</div></div>
+    </div>
+    <div class="small muted mb">Minutos por dia (foco Pomodoro + questões):</div>${minutesSVG(14)}`;
+  m.appendChild(tcard);
+
+  // Lembrete diário
+  const rm=(S.settings&&S.settings.reminder)||{enabled:false,time:"19:00"};
+  m.appendChild(el("div","sectitle","Lembrete diário"));
+  const rcard=el("div","card");
+  rcard.innerHTML=`<p class="muted small mb">Receba um aviso todos os dias para não perder o ritmo (e a questão do dia). Funciona melhor com o app <b>instalado</b> e aberto no horário.</p>`;
+  const rrow=el("label","mission"); rrow.style.cursor="pointer";
+  rrow.innerHTML=`<input type="checkbox" ${rm.enabled?"checked":""} style="width:22px;height:22px">
+    <div class="info"><div class="nm">Ativar lembrete diário</div><div class="muted small">Notificação no horário escolhido</div></div>`;
+  const rcb=rrow.querySelector("input");
+  rcard.appendChild(rrow);
+  const trow=el("div","mt"); trow.innerHTML=`<div class="small muted">Horário</div>`;
+  const tin=el("input","input"); tin.type="time"; tin.value=rm.time||"19:00"; trow.appendChild(tin);
+  rcard.appendChild(trow);
+  const rsave=el("button","btn sm mt","Salvar lembrete");
+  const applyR=()=>{ S.settings.reminder={enabled:rcb.checked, time:tin.value||"19:00", lastDate:(S.settings.reminder||{}).lastDate||""};
+    if(rcb.checked){ try{ if(window.Notification && Notification.permission==="default") Notification.requestPermission(); }catch(e){} }
+    save(); toast("Lembrete "+(rcb.checked?"ativado":"desativado")+" ✅"); };
+  rsave.onclick=applyR; rcb.onchange=()=>{ if(rcb.checked){ try{ if(window.Notification&&Notification.permission==="default") Notification.requestPermission(); }catch(e){} } };
+  rcard.appendChild(rsave);
+  m.appendChild(rcard);
 
   const grid=el("div","grid cols2 mt");
   ACHIEVEMENTS.forEach(a=>{
@@ -1311,7 +1414,7 @@ function pomoEnsureLoop(){
     if(pomo.phase==="idle" || !pomo.running) return;
     pomo.left--;
     if(pomo.left<=0){
-      if(pomo.phase==="focus"){ S.stats.pomodoros=(S.stats.pomodoros||0)+1; const h=histToday(); h.pomodoros=(h.pomodoros||0)+1; touchStreak(); addXP(15); save(); renderTopbar(); checkBadges();
+      if(pomo.phase==="focus"){ S.stats.pomodoros=(S.stats.pomodoros||0)+1; S.stats.focusMin=(S.stats.focusMin||0)+pFocus(); const h=histToday(); h.pomodoros=(h.pomodoros||0)+1; h.focusMin=(h.focusMin||0)+pFocus(); touchStreak(); addXP(15); save(); renderTopbar(); checkBadges();
         const goal=(S.settings&&S.settings.pomoGoal)||4;
         pomoNotify((h.pomodoros>=goal?"Meta de foco do dia batida! 🎉 ":"Foco concluído! +15 XP 🍅 ")+"Hora de descansar ☕"); pomoBegin("break"); }
       else { pomoNotify("Descanso acabou! Bora voltar aos estudos 💪"); pomoBegin("focus"); }
@@ -1459,9 +1562,24 @@ function applyTheme(){
 }
 function toggleTheme(){ if(!S.settings) S.settings={}; S.settings.theme=(S.settings.theme==="light")?"dark":"light"; save(); applyTheme(); }
 
+/* ---------- Lembrete diário ---------- */
+function reminderTick(){
+  const rm=S.settings&&S.settings.reminder; if(!rm||!rm.enabled||!rm.time) return;
+  const today=todayStr(); if(rm.lastDate===today) return;
+  const now=new Date(); const hh=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+  if(hh>=rm.time){
+    rm.lastDate=today; save();
+    const msg = studyMinToday()>0 ? "Continue firme! Que tal a questão do dia? 🎯" : "Hora de estudar! Faça a questão do dia e mantenha o streak 🔥";
+    try{ if(window.Notification && Notification.permission==="granted") new Notification("MedQuest 5",{body:msg}); }catch(e){}
+    toast(msg);
+  }
+}
+function initReminder(){ try{ reminderTick(); }catch(e){} setInterval(()=>{ try{ reminderTick(); }catch(e){} }, 30000); }
+
 /* ---------- Boot ---------- */
 pomoRender();
 applyTheme();
+initReminder();
 const _sb=$("#searchbtn"); if(_sb) _sb.onclick=openSearch;
 const _tb=$("#themebtn"); if(_tb) _tb.onclick=toggleTheme;
 ensureMissions();
