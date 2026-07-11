@@ -3,9 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b1020">
+<meta name="theme-color" content="#080b16">
 <title>MedQuest 5 — Estudos Gamificados</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MedQuest">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,6 +18,7 @@
   <div class="topbar">
     <div class="logo"><span class="mark">🩺</span> MedQuest <span style="color:var(--accent)">5</span></div>
     <div class="spacer"></div>
+    <button class="iconbtn" id="searchbtn" title="Buscar">🔎</button>
     <div class="playerchip" id="playerchip"></div>
   </div>
 
@@ -30,5 +36,10 @@
 <script src="js/config.js"></script>
 <script src="js/content.js"></script>
 <script src="js/app.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
 </body>
 </html>

@@ -11,6 +11,9 @@ window.MEDQUEST_CONFIG = {
   // Nome da turma/grupo (aparece no ranking e separa os grupos)
   TURMA: "Mandic 5º sem",
 
+  // Datas das provas (contagem regressiva na tela inicial). Ajuste quando saírem as datas oficiais.
+  EXAMS: { N1: "2026-09-28", N2: "2026-12-01" },
+
   // Provedor do ranking: "github" | "supabase" | "local"
   RANKING_PROVIDER: "github",
 

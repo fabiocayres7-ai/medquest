@@ -91,6 +91,7 @@ function freshState(){
     history:{},                   // {"AAAA-MM-DD": {xp,answered,correct}} — evolução diária
     notes:{},                     // {"disc::topic": "anotação pessoal"}
     duels:[],                     // histórico de duelos [{opp,my,their,res,date}]
+    settings:{pomoFocus:25, pomoBreak:5}, // Pomodoro configurável
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
@@ -428,9 +429,23 @@ function viewHome(m){
     tile("❓",S.stats.answered,"questões"),
     tile("🎯",acc+"%","de acerto"),
     tile("🃏",S.stats.reviews,"revisões"),
+    tile("🍅",pomodorosToday(),"foco hoje"),
     tile("🎖️",achievementsUnlocked()+"/"+achievementsMax(),"patamares"),
   );
   m.appendChild(tiles);
+
+  // Contagem regressiva para as provas
+  const ex=CFG.EXAMS||{};
+  const dgt=(ds)=>{ if(!ds) return null; const t=new Date(ds+"T00:00:00"); if(isNaN(t)) return null; return Math.ceil((t-new Date())/86400000); };
+  const d1=dgt(ex.N1), d2=dgt(ex.N2);
+  const parts=[];
+  if(d1!=null && d1>=0) parts.push(`<b>N1</b> em <b style="color:var(--warn)">${d1}</b> dia${d1===1?"":"s"}`);
+  if(d2!=null && d2>=0) parts.push(`<b>N2</b> em <b style="color:var(--warn)">${d2}</b> dia${d2===1?"":"s"}`);
+  if(parts.length){
+    const cd=el("div","card mt"); cd.style.display="flex"; cd.style.alignItems="center"; cd.style.gap="12px";
+    cd.innerHTML=`<div style="font-size:26px">📆</div><div class="small">Contagem regressiva — ${parts.join(" · ")}</div>`;
+    m.appendChild(cd);
+  }
 
   // Aviso: comece pelo Plano
   const sc=studiedCount();
@@ -1191,6 +1206,23 @@ function viewBadges(m){
     m.appendChild(wrap);
   }
 
+  // Backup do progresso (migrar de aparelho / segurança)
+  m.appendChild(el("div","sectitle","Backup"));
+  const bk=el("div","card");
+  bk.innerHTML=`<p class="muted small mb">Guarde seu <b>código de backup</b> em local seguro. Para trocar de aparelho, cole o código no outro e restaure.</p>`;
+  const bta=el("textarea","input"); bta.readOnly=true; bta.style.fontSize="10px";
+  try{ bta.value=btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }catch(e){ bta.value=""; }
+  bta.onclick=()=>{ bta.select(); document.execCommand&&document.execCommand("copy"); toast("Backup copiado!"); };
+  bk.appendChild(el("div","small muted","Seu backup (toque para copiar):")); bk.appendChild(bta);
+  const bimp=el("textarea","input"); bimp.placeholder="Cole um código de backup para restaurar...";
+  bk.appendChild(el("div","small muted mt","Restaurar backup:")); bk.appendChild(bimp);
+  const bib=el("button","btn ghost sm mt","♻️ Restaurar");
+  bib.onclick=()=>{ if(!bimp.value.trim())return; if(!confirm("Restaurar vai SUBSTITUIR seu progresso atual. Continuar?"))return;
+    try{ const st=JSON.parse(decodeURIComponent(escape(atob(bimp.value.trim())))); if(!st||!st.profile)throw 0; S=migrate(st); save(); toast("Progresso restaurado! ✅"); go("home"); }
+    catch(e){ toast("Código de backup inválido."); } };
+  bk.appendChild(bib);
+  m.appendChild(bk);
+
   // Reset
   const rc=el("div","center mt");
   const rb=el("button","btn ghost sm","⟲ Reiniciar progresso"); rb.onclick=()=>{ if(confirm("Apagar TODO o seu progresso? Não dá para desfazer.")){ localStorage.removeItem(LS_KEY); S=freshState(); onboard(); } };
@@ -1218,49 +1250,111 @@ function onboard(){
   mo.appendChild(btn); bg.appendChild(mo); document.body.appendChild(bg);
 }
 
-/* ---------- Pomodoro ---------- */
-const POMO={focusMin:25, breakMin:5};
-let pomo={phase:"idle", left:0, running:false};
+/* ---------- Pomodoro (controles explícitos) ---------- */
+const POMO_PRESETS=[[25,5],[50,10],[15,3],[45,15]];
+let pomo={phase:"idle", left:0, running:false, open:false};
 let pomoIv=null;
 function fmtT(s){ return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }
+function pFocus(){ return (S.settings&&S.settings.pomoFocus)||25; }
+function pBreak(){ return (S.settings&&S.settings.pomoBreak)||5; }
+function pomodorosToday(){ return (S.history[todayStr()]||{}).pomodoros||0; }
 function pomoBeep(){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return; const ac=new AC(); const o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=880; g.gain.value=0.07; o.start(); setTimeout(()=>{o.stop();ac.close&&ac.close();},420); }catch(e){} }
 function pomoNotify(msg){ toast(msg); try{ if(window.Notification && Notification.permission==="granted") new Notification("MedQuest 5",{body:msg}); }catch(e){} pomoBeep(); }
-function pomoStart(phase){
-  pomo.phase=phase; pomo.left=(phase==="focus"?POMO.focusMin:POMO.breakMin)*60; pomo.running=true;
-  try{ if(window.Notification && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
+function pomoEnsureLoop(){
   clearInterval(pomoIv);
   pomoIv=setInterval(()=>{
-    if(!pomo.running) return;
+    if(pomo.phase==="idle" || !pomo.running) return;
     pomo.left--;
     if(pomo.left<=0){
-      if(pomo.phase==="focus"){ S.stats.pomodoros=(S.stats.pomodoros||0)+1; touchStreak(); addXP(15); save(); renderTopbar(); checkBadges();
-        pomoNotify("Foco concluído! +15 XP 🍅 Descanse 5 min ☕"); pomoStart("break"); }
-      else { pomoNotify("Descanso acabou! Bora estudar 💪"); pomoStart("focus"); }
+      if(pomo.phase==="focus"){ S.stats.pomodoros=(S.stats.pomodoros||0)+1; const h=histToday(); h.pomodoros=(h.pomodoros||0)+1; touchStreak(); addXP(15); save(); renderTopbar(); checkBadges();
+        pomoNotify("Foco concluído! +15 XP 🍅 Hora de descansar ☕"); pomoBegin("break"); }
+      else { pomoNotify("Descanso acabou! Bora voltar aos estudos 💪"); pomoBegin("focus"); }
       return;
     }
     pomoRender();
   },1000);
-  pomoRender();
 }
-function pomoTogglePause(){ pomo.running=!pomo.running; pomoRender(); }
-function pomoStop(){ clearInterval(pomoIv); pomoIv=null; pomo={phase:"idle",left:0,running:false}; pomoRender(); }
+function pomoBegin(phase){ // define fase e começa a contar
+  pomo.phase=phase; pomo.left=(phase==="focus"?pFocus():pBreak())*60; pomo.running=true;
+  try{ if(window.Notification && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
+  pomoEnsureLoop(); pomoRender();
+}
+function pomoIniciar(){ pomoBegin("focus"); }
+function pomoPausar(){ pomo.running=false; pomoRender(); }
+function pomoRetomar(){ pomo.running=true; pomoRender(); }
+function pomoReiniciar(){ pomo.left=((pomo.phase==="break")?pBreak():pFocus())*60; pomo.running=true; pomoRender(); } // reinicia a fase atual
+function pomoParar(){ clearInterval(pomoIv); pomoIv=null; pomo={phase:"idle",left:0,running:false,open:pomo.open}; pomoRender(); }
+function pomoCyclePreset(){
+  const cur=POMO_PRESETS.findIndex(p=>p[0]===pFocus()&&p[1]===pBreak());
+  const nx=POMO_PRESETS[(cur+1)%POMO_PRESETS.length];
+  S.settings.pomoFocus=nx[0]; S.settings.pomoBreak=nx[1]; save(); pomoRender();
+}
+function pomoBtn(id,label,cls){ return `<button class="pmb ${cls||""}" id="${id}">${label}</button>`; }
 function pomoRender(){
   let box=$("#pomo"); if(!box){ box=el("div"); box.id="pomo"; document.body.appendChild(box); }
-  if(pomo.phase==="idle"){
-    box.className="pomo idle";
-    box.innerHTML=`<button class="pomo-pill" id="pomo-main">🍅 Pomodoro</button>`;
-    $("#pomo-main").onclick=()=>pomoStart("focus");
-  } else {
-    const icon=pomo.phase==="focus"?"🍅":"☕";
-    box.className="pomo "+pomo.phase+(pomo.running?"":" paused");
-    box.innerHTML=`<button class="pomo-pill" id="pomo-main" title="pausar/retomar">${icon} ${fmtT(pomo.left)}${pomo.running?"":" ⏸"}</button><button class="pomo-x" id="pomo-x" title="parar">✕</button>`;
-    $("#pomo-main").onclick=pomoTogglePause;
-    $("#pomo-x").onclick=pomoStop;
+  const idle=pomo.phase==="idle";
+  const icon=pomo.phase==="break"?"☕":"🍅";
+  const label = idle ? `🍅 Pomodoro` : `${icon} ${fmtT(pomo.left)}`;
+  box.className="pomo "+(idle?"idle":pomo.phase)+(!idle&&!pomo.running?" paused":"");
+  let controls="";
+  if(pomo.open){
+    if(idle){
+      controls = pomoBtn("p-start","▶ Iniciar","go")
+        + pomoBtn("p-cfg","⚙ "+pFocus()+"/"+pBreak(),"cfg");
+    } else {
+      controls = (pomo.running?pomoBtn("p-pause","⏸ Pausar"):pomoBtn("p-resume","▶ Retomar","go"))
+        + pomoBtn("p-restart","⟲ Reiniciar")
+        + pomoBtn("p-stop","✕ Parar","stop");
+    }
   }
+  box.innerHTML=`<button class="pomo-pill" id="pomo-toggle" title="pomodoro">${label}${pomo.open?" ▾":" ▸"}</button>`+
+    (controls?`<div class="pomo-ctrl">${controls}</div>`:"");
+  $("#pomo-toggle").onclick=()=>{ pomo.open=!pomo.open; pomoRender(); };
+  const bind=(id,fn)=>{ const b=$("#"+id); if(b) b.onclick=fn; };
+  bind("p-start",pomoIniciar); bind("p-cfg",pomoCyclePreset);
+  bind("p-pause",pomoPausar); bind("p-resume",pomoRetomar);
+  bind("p-restart",pomoReiniciar); bind("p-stop",pomoParar);
+}
+
+/* ---------- Busca global ---------- */
+function normStr(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(); }
+function openSearch(){
+  const bg=el("div","modal-bg"); bg.style.alignItems="flex-start"; bg.style.paddingTop="34px";
+  const mo=el("div","modal"); mo.style.textAlign="left"; mo.style.maxWidth="580px"; mo.style.width="100%"; mo.style.maxHeight="88vh"; mo.style.overflow="auto";
+  mo.innerHTML=`<h3 style="text-align:center;margin-bottom:10px">🔎 Buscar</h3>`;
+  const inp=el("input","input"); inp.placeholder="Ex.: sepse, anel de sinete, clearance, Courvoisier...";
+  mo.appendChild(inp);
+  const res=el("div","mt"); mo.appendChild(res);
+  const close=el("button","btn ghost block mt","Fechar"); close.onclick=()=>bg.remove(); mo.appendChild(close);
+  bg.appendChild(mo); bg.onclick=e=>{ if(e.target===bg) bg.remove(); }; document.body.appendChild(bg);
+  setTimeout(()=>inp.focus(),50);
+  function run(){
+    const raw=inp.value.trim(), q=normStr(raw); res.innerHTML="";
+    if(q.length<2){ res.innerHTML=`<div class="muted small center">Digite ao menos 2 letras.</div>`; return; }
+    const qs=QUESTIONS.filter(x=>normStr(x.question+" "+x.topic+" "+x.explanation+" "+x.options.join(" ")).includes(q)).slice(0,12);
+    const sm=Object.keys(SUMMARIES).filter(k=>normStr(k+" "+SUMMARIES[k]).includes(q)).slice(0,10);
+    const fc=FLASHCARDS.filter(x=>normStr(x.front+" "+x.back).includes(q)).slice(0,12);
+    const im=IMAGES.filter(x=>normStr(x.findings+" "+x.answer+" "+x.explanation).includes(q)).slice(0,10);
+    if(!(qs.length+sm.length+fc.length+im.length)){ res.innerHTML=`<div class="muted small center">Nada encontrado para "${esc(raw)}".</div>`; return; }
+    if(qs.length){ res.appendChild(el("div","sectitle","Questões ("+qs.length+")"));
+      qs.forEach(x=>{ const d=DISCIPLINES[x.discipline]; const it=el("div","card mt");
+        it.innerHTML=`<div class="muted small">${d.icon} ${esc(x.topic)}</div><div style="font-weight:700;margin:4px 0">${esc(x.question)}</div>
+          <div class="small" style="color:var(--good)"><b>Resposta:</b> ${esc(x.options[x.answer])}</div>
+          <div class="explain ok mt">${esc(x.explanation)}</div>`; res.appendChild(it); }); }
+    if(sm.length){ res.appendChild(el("div","sectitle","Resumos ("+sm.length+")"));
+      sm.forEach(k=>{ const i=k.indexOf("::"); const it=el("div","card mt");
+        it.innerHTML=`<div style="font-weight:700">📖 ${esc(k.slice(i+2))}</div><div class="explain mt">${esc(SUMMARIES[k]).replace(/\n/g,"<br>")}</div>`; res.appendChild(it); }); }
+    if(fc.length){ res.appendChild(el("div","sectitle","Flashcards ("+fc.length+")"));
+      fc.forEach(x=>{ const it=el("div","card mt"); it.innerHTML=`<div style="font-weight:700">${esc(x.front)}</div><div class="small muted mt">${esc(x.back)}</div>`; res.appendChild(it); }); }
+    if(im.length){ res.appendChild(el("div","sectitle","Imagens ("+im.length+")"));
+      im.forEach(x=>{ const it=el("div","card mt"); it.innerHTML=`<div class="muted small">${esc(x.area)}</div><div class="small"><b>Achados:</b> ${esc(x.findings)}</div><div class="small" style="color:var(--good)"><b>Dx:</b> ${esc(x.answer)}</div>`; res.appendChild(it); }); }
+  }
+  inp.oninput=run;
 }
 
 /* ---------- Boot ---------- */
 pomoRender();
+const _sb=$("#searchbtn"); if(_sb) _sb.onclick=openSearch;
 ensureMissions();
 // sincroniza conquistas com o progresso atual (sem duplicar patamares já registrados)
 for(const a of ACHIEVEMENTS){ const t=achTier(a); if((S.ach[a.id]||0)<t) S.ach[a.id]=t; }
