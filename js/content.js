@@ -2337,5 +2337,115 @@ const CRONOGRAMA = {
   ],
 };
 
+/* ============================ MÓDULO DE IMAGENS (reconhecimento visual) ============================
+   "Bata o olho e diga o diagnóstico". Cada card mostra os ACHADOS característicos (o que reconhecer)
+   e, quando útil, um ESQUEMA original (svg). Para usar SUAS próprias imagens (dos seus slides),
+   coloque o arquivo em medquest/img/ e preencha "src" (ex.: src:"img/psammoma.jpg").
+   OBS: não publique imagens de terceiros com direitos autorais em repositório público.
+   ==================================================================================================== */
+const IMG = {}; // esquemas SVG originais (reutilizáveis)
+IMG.anelSinete = `<svg viewBox="0 0 120 120" role="img"><circle cx="60" cy="62" r="42" fill="#22314f" stroke="#8b5cf6" stroke-width="2"/><circle cx="60" cy="58" r="30" fill="#0d1428"/><path d="M60 88 a30 30 0 0 1 -26 -15 a42 42 0 0 0 52 0 a30 30 0 0 1 -26 15z" fill="#b06cff"/><text x="60" y="112" fill="#8ea0c4" font-size="9" text-anchor="middle">núcleo em crescente na periferia</text></svg>`;
+IMG.psammoma = `<svg viewBox="0 0 120 120" role="img"><g fill="none" stroke="#b06cff" stroke-width="2"><circle cx="55" cy="55" r="10"/><circle cx="55" cy="55" r="18"/><circle cx="55" cy="55" r="26"/><circle cx="55" cy="55" r="34"/></g><circle cx="55" cy="55" r="4" fill="#7c8cff"/><text x="60" y="112" fill="#8ea0c4" font-size="9" text-anchor="middle">calcificação lamelar concêntrica</text></svg>`;
+IMG.vilosidade = `<svg viewBox="0 0 200 120" role="img"><text x="50" y="14" fill="#34d399" font-size="9" text-anchor="middle">normal</text><text x="150" y="14" fill="#fb7185" font-size="9" text-anchor="middle">atrofia</text><g stroke="#8ea0c4" fill="none" stroke-width="2"><path d="M15 90 q6 -50 12 0 q6 -50 12 0 q6 -50 12 0 q6 -50 12 0 q6 -50 12 0"/></g><line x1="12" y1="90" x2="90" y2="90" stroke="#8ea0c4" stroke-width="2"/><line x1="112" y1="86" x2="188" y2="86" stroke="#fb7185" stroke-width="3"/><g stroke="#fb7185" stroke-width="1.5"><line x1="120" y1="86" x2="120" y2="98"/><line x1="135" y1="86" x2="135" y2="102"/><line x1="150" y1="86" x2="150" y2="98"/><line x1="165" y1="86" x2="165" y2="102"/></g><text x="150" y="116" fill="#8ea0c4" font-size="8" text-anchor="middle">mucosa plana + criptas</text></svg>`;
+IMG.appleCore = `<svg viewBox="0 0 120 140" role="img"><path d="M45 10 h30 v45 q-15 12 -15 12 q0 0 -15 -12 z" fill="#e8edf7"/><path d="M45 130 h30 v-45 q-15 -12 -15 -12 q0 0 -15 12 z" fill="#e8edf7"/><path d="M52 66 q8 6 16 0" fill="none" stroke="#fb7185" stroke-width="2"/><path d="M52 74 q8 -6 16 0" fill="none" stroke="#fb7185" stroke-width="2"/><text x="60" y="138" fill="#8ea0c4" font-size="9" text-anchor="middle">estenose 'em maçã mordida'</text></svg>`;
+IMG.pneumoperitonio = `<svg viewBox="0 0 140 110" role="img"><rect x="0" y="0" width="140" height="110" fill="#0d1428"/><path d="M20 60 q50 -40 100 0" fill="#22314f" stroke="#8ea0c4" stroke-width="2"/><path d="M20 60 q50 -22 100 0 q-50 -10 -100 0z" fill="#0b1020" stroke="#fb7185" stroke-width="1.5"/><text x="70" y="52" fill="#fb7185" font-size="9" text-anchor="middle">ar</text><text x="70" y="102" fill="#8ea0c4" font-size="9" text-anchor="middle">ar sob a cúpula diafragmática</text></svg>`;
+IMG.groundGlass = `<svg viewBox="0 0 120 120" role="img"><g fill="#22314f" stroke="#8b5cf6" stroke-width="1.5"><ellipse cx="45" cy="50" rx="16" ry="12"/><ellipse cx="78" cy="62" rx="16" ry="12"/><ellipse cx="55" cy="80" rx="16" ry="12"/></g><g stroke="#0d1428" stroke-width="2"><line x1="45" y1="40" x2="45" y2="60"/><line x1="78" y1="52" x2="78" y2="72"/></g><text x="60" y="112" fill="#8ea0c4" font-size="8" text-anchor="middle">núcleos claros com fenda (vidro fosco)</text></svg>`;
+
+const IMAGES = [
+  /* ---- Histologia / Patologia ---- */
+  { id:"img01", discipline:"pratica", area:"Histologia", svg:IMG.anelSinete,
+    findings:"Micrografia: células com grande vacúolo de muco intracitoplasmático que empurra o núcleo achatado para a periferia, infiltrando difusamente a parede gástrica.",
+    answer:"Adenocarcinoma gástrico DIFUSO (células em anel de sinete)",
+    explanation:"Células em anel de sinete + infiltração difusa (linite plástica) = tipo DIFUSO de Lauren, com perda de E-caderina (CDH1), pior prognóstico e mais em jovens. O tipo intestinal forma glândulas e liga-se à cascata de Correa (H. pylori)." },
+  { id:"img02", discipline:"pratica", area:"Histologia", svg:IMG.vilosidade,
+    findings:"Biópsia duodenal: mucosa com achatamento/atrofia das vilosidades, hiperplasia das criptas e aumento de linfócitos intraepiteliais.",
+    answer:"Doença celíaca (atrofia vilositária)",
+    explanation:"Atrofia de vilosidades + hiperplasia de criptas + linfocitose intraepitelial, com anti-transglutaminase positivo e HLA-DQ2/DQ8. A perda de superfície absortiva causa má absorção. Tratamento: dieta sem glúten." },
+  { id:"img03", discipline:"pratica", area:"Histologia", svg:IMG.psammoma,
+    findings:"Micrografia da tireoide: estruturas de calcificação em camadas concêntricas (lamelar) e núcleos claros com fendas e pseudoinclusões.",
+    answer:"Carcinoma papilífero da tireoide",
+    explanation:"Corpos de PSAMMOMA (calcificação concêntrica) + núcleos em 'vidro fosco' com grooves são marcas do carcinoma PAPILÍFERO — o mais comum, de disseminação linfática e bom prognóstico." },
+  { id:"img04", discipline:"pratica", area:"Histologia", svg:IMG.groundGlass,
+    findings:"Aspirado/biópsia de nódulo tireoidiano: núcleos aumentados, pálidos ('vidro fosco'), com fendas longitudinais (grooves) e pseudoinclusões nucleares.",
+    answer:"Carcinoma papilífero (núcleos em vidro fosco)",
+    explanation:"As alterações NUCLEARES (não a arquitetura) definem o papilífero: núcleos claros em vidro fosco, fendas e pseudoinclusões, além dos corpos de psammoma. Achado clássico de patologia da tireoide." },
+  { id:"img05", discipline:"pratica", area:"Histologia",
+    findings:"Mucosa intestinal com inflamação transmural, agregados linfoides e GRANULOMAS não caseosos, com áreas acometidas alternadas com mucosa normal (salteado).",
+    answer:"Doença de Crohn",
+    explanation:"Inflamação transmural + granulomas não caseosos + acometimento salteado ('paralelepípedo') = CROHN. A retocolite ulcerativa é contínua, limitada à mucosa/submucosa e sem granulomas." },
+  { id:"img06", discipline:"pratica", area:"Histologia",
+    findings:"Fígado com esteatose macrovesicular, hepatócitos balonizados e inclusões eosinofílicas intracitoplasmáticas (corpúsculos de Mallory-Denk), com infiltrado inflamatório.",
+    answer:"Esteato-hepatite (NASH ou alcoólica)",
+    explanation:"Esteatose + balonização + corpúsculos de Mallory-Denk + inflamação = ESTEATO-HEPATITE. No contexto de síndrome metabólica sem álcool = NASH; pode progredir para fibrose, cirrose e CHC." },
+  { id:"img07", discipline:"pratica", area:"Histologia",
+    findings:"Fígado com nódulos de hepatócitos regenerativos circundados por septos de fibrose que distorcem a arquitetura lobular.",
+    answer:"Cirrose hepática",
+    explanation:"Nódulos regenerativos + fibrose em ponte com distorção arquitetural = CIRROSE (via final de lesão crônica: álcool, hepatites B/C, NASH). Base das complicações (hipertensão portal, CHC)." },
+  { id:"img08", discipline:"pratica", area:"Histologia",
+    findings:"Tireoide com denso infiltrado linfocitário formando centros germinativos e células epiteliais grandes, eosinofílicas e granulares (células de Hürthle/oxífilas).",
+    answer:"Tireoidite de Hashimoto",
+    explanation:"Infiltrado linfocitário com centros germinativos + células de Hürthle = HASHIMOTO (autoimune, anti-TPO), causa mais comum de hipotireoidismo em áreas com iodo suficiente." },
+  { id:"img09", discipline:"pratica", area:"Histologia",
+    findings:"Pâncreas endócrino (ilhotas) com depósito de material amorfo, eosinofílico, congo-red positivo (amiloide) entre as células.",
+    answer:"Diabetes mellitus tipo 2 (amiloide nas ilhotas)",
+    explanation:"Depósito de AMILOIDE (amilina/IAPP) nas ilhotas é típico do DM2 (resistência insulínica + disfunção da célula beta). No DM1 há insulite autoimune com destruição das células beta." },
+  { id:"img10", discipline:"pratica", area:"Histologia",
+    findings:"Parede arterial com placa na íntima contendo macrófagos repletos de lipídios (células espumosas), núcleo lipídico e capa fibrosa.",
+    answer:"Placa aterosclerótica (aterosclerose)",
+    explanation:"Células espumosas (macrófagos com LDL oxidado) + núcleo lipídico + capa fibrosa = ATEROSCLEROSE. Placa instável (capa fina) rompe e causa trombose (IAM, AVC, isquemia mesentérica)." },
+  { id:"img11", discipline:"pratica", area:"Histologia",
+    findings:"Esôfago distal com epitélio colunar contendo células caliciformes (metaplasia intestinal) substituindo o epitélio escamoso.",
+    answer:"Esôfago de Barrett",
+    explanation:"Metaplasia intestinal (epitélio colunar com células caliciformes) no esôfago distal = BARRETT, consequência da DRGE crônica e precursora do ADENOCARCINOMA esofágico (metaplasia → displasia → carcinoma)." },
+  { id:"img12", discipline:"pratica", area:"Histologia (SNC)",
+    findings:"Córtex cerebral com placas extracelulares de amiloide (placas neuríticas/senis) e emaranhados neurofibrilares intracelulares (tau), com perda neuronal.",
+    answer:"Doença de Alzheimer",
+    explanation:"Placas senis (β-amiloide) + emaranhados neurofibrilares (proteína tau hiperfosforilada) + atrofia cortical = ALZHEIMER, principal causa de demência. Correlato de patologia do SNC (N2)." },
+
+  /* ---- Radiologia / Imagem ---- */
+  { id:"img13", discipline:"pratica", area:"Radiologia", svg:IMG.appleCore,
+    findings:"Clister opaco (enema baritado) do cólon com estenose anular curta, de bordas irregulares e 'ombros' abruptos, estreitando a luz ('sinal da maçã mordida').",
+    answer:"Adenocarcinoma de cólon (lesão 'apple-core')",
+    explanation:"A imagem 'em maçã mordida' (apple-core) é a estenose anular do adenocarcinoma colorretal. Tumores do cólon esquerdo tendem a obstruir/estenosar; os do direito sangram e dão anemia." },
+  { id:"img14", discipline:"pratica", area:"Radiologia", svg:IMG.pneumoperitonio,
+    findings:"Radiografia de tórax/abdome em pé: fina lâmina de ar (radiotransparente) entre a cúpula diafragmática e o fígado.",
+    answer:"Pneumoperitônio (víscera oca perfurada)",
+    explanation:"Ar livre sob o diafragma = PNEUMOPERITÔNIO, sinal de perfuração de víscera oca (ex.: úlcera perfurada) — abdome agudo perfurativo, emergência cirúrgica." },
+  { id:"img15", discipline:"pratica", area:"Radiologia", svg:IMG.groundGlass,
+    findings:"TC de tórax com opacidades em 'vidro fosco' bilaterais e difusas, poupando parcialmente as bases, em paciente com hipoxemia grave.",
+    answer:"SDRA (síndrome do desconforto respiratório agudo)",
+    explanation:"Vidro fosco bilateral difuso + hipoxemia grave (PaO2/FiO2 baixo) sem causa cardíaca = SDRA. Causa clássica: sepse e pancreatite grave (resposta inflamatória sistêmica lesando o alvéolo)." },
+  { id:"img16", discipline:"pratica", area:"Radiologia",
+    findings:"Ultrassom do abdome superior: imagem hiperecogênica com sombra acústica posterior no interior da vesícula biliar, móvel à mudança de decúbito.",
+    answer:"Colelitíase (cálculo biliar)",
+    explanation:"Foco hiperecogênico + SOMBRA ACÚSTICA + mobilidade = cálculo na vesícula (COLELITÍASE). Complica com colecistite, coledocolitíase/colangite e pancreatite biliar." },
+  { id:"img17", discipline:"pratica", area:"Radiologia",
+    findings:"Ultrassom/colangiorressonância: dilatação das vias biliares intra e extra-hepáticas com cálculo impactado no colédoco.",
+    answer:"Coledocolitíase (obstrução biliar)",
+    explanation:"Dilatação de vias biliares + cálculo no colédoco = COLEDOCOLITÍASE → icterícia obstrutiva; se infectar, colangite (tríade de Charcot: dor + febre + icterícia) — CPRE de urgência." },
+  { id:"img18", discipline:"pratica", area:"Radiologia (SNC)",
+    findings:"TC de crânio sem contraste, 24 h após déficit focal súbito: área HIPODENSA com apagamento de sulcos em território arterial.",
+    answer:"AVC isquêmico",
+    explanation:"Hipodensidade tardia em território vascular = AVC ISQUÊMICO (a TC precoce pode ser normal; a hipodensidade leva horas). A TC inicial serve para EXCLUIR hemorragia antes da trombólise." },
+  { id:"img19", discipline:"pratica", area:"Radiologia (SNC)",
+    findings:"TC de crânio sem contraste, imediatamente após déficit súbito: coleção HIPERDENSA (branca) no parênquima/espaço, com efeito de massa.",
+    answer:"AVC hemorrágico",
+    explanation:"Sangue agudo é HIPERDENSO (branco) na TC imediatamente — ao contrário do isquêmico (hipodenso e tardio). Reconhecer isquêmico × hemorrágico define a conduta (trombólise é contraindicada no hemorrágico)." },
+  { id:"img20", discipline:"pratica", area:"Radiologia",
+    findings:"TC/RM de fígado em cirrótico: nódulo com realce arterial intenso (hipervascular) e 'washout' (clareamento) na fase venosa/tardia.",
+    answer:"Carcinoma hepatocelular (CHC)",
+    explanation:"Realce arterial + washout em fígado cirrótico = padrão típico de CHC (permite diagnóstico por imagem, critérios LI-RADS), pela neoangiogênese arterial do tumor. Marcador: alfafetoproteína." },
+
+  /* ---- Semiologia / Macroscopia ---- */
+  { id:"img21", discipline:"pratica", area:"Semiologia",
+    findings:"Abdome de paciente cirrótico com veias dilatadas e tortuosas irradiando a partir do umbigo.",
+    answer:"Cabeça de medusa (hipertensão portal)",
+    explanation:"Circulação colateral periumbilical ('cabeça de medusa') resulta da recanalização da veia umbilical na HIPERTENSÃO PORTAL — junto com ascite, varizes e esplenomegalia." },
+  { id:"img22", discipline:"pratica", area:"Semiologia",
+    findings:"Paciente com pele e escleras amareladas, urina escura (colúria) e fezes claras (acolia), com prurido.",
+    answer:"Icterícia colestática/obstrutiva",
+    explanation:"Icterícia + colúria + acolia + prurido = padrão COLESTÁTICO (bilirrubina direta, FA e GGT elevadas). Causas: cálculo no colédoco, tumor de via biliar ou de cabeça de pâncreas." },
+];
+
 // Exporta para o app
-window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA };
+window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA, IMAGES };

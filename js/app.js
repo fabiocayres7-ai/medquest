@@ -5,7 +5,7 @@
    ============================================================ */
 (function(){
 "use strict";
-const { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA } = window.MEDQUEST_DATA;
+const { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA, IMAGES } = window.MEDQUEST_DATA;
 const CFG = window.MEDQUEST_CONFIG;
 const LS_KEY = "medquest5_state_v1";
 
@@ -78,7 +78,7 @@ function freshState(){
   return {
     profile:{ id:"p_"+Math.abs(hash(String(navigator.userAgent+performance.now()+"x"))).toString(36), name:"", turma:CFG.TURMA },
     xp:0,
-    stats:{answered:0, correct:0, reviews:0, activeDays:0, perfectQuizzes:0},
+    stats:{answered:0, correct:0, reviews:0, activeDays:0, perfectQuizzes:0, imagesSeen:0},
     studied:{},                   // {"disc::topic": true} — temas marcados como estudados
     byDisc:{},                    // {disc:{answered,correct}}
     seenQ:{},                     // {qid: {correct:bool, count}}
@@ -337,6 +337,7 @@ function submitScoreGithub(){
 let route="home";
 let quiz=null;   // {pool, idx, correctCount, mode}
 let flash=null;  // {pool, idx, flipped}
+let imgd=null;   // {pool, idx, revealed, filter}
 
 function render(){
   ensureMissions();
@@ -347,6 +348,7 @@ function render(){
   else if(route==="plan") viewPlan(main);
   else if(route==="quiz") viewQuiz(main);
   else if(route==="flash") viewFlash(main);
+  else if(route==="images") viewImages(main);
   else if(route==="summaries") viewSummaries(main);
   else if(route==="rank") viewRank(main);
   else if(route==="badges") viewBadges(main);
@@ -370,7 +372,7 @@ function renderTopbar(){
 }
 
 function renderNav(){
-  const items=[["home","🏠","Início"],["plan","📋","Plano"],["quiz","❓","Questões"],["flash","🃏","Flashcards"],["summaries","📖","Resumos"],["rank","🏆","Ranking"],["badges","🎖️","Conquistas"]];
+  const items=[["home","🏠","Início"],["plan","📋","Plano"],["quiz","❓","Questões"],["flash","🃏","Flashcards"],["images","🖼️","Imagens"],["summaries","📖","Resumos"],["rank","🏆","Ranking"],["badges","🎖️","Conquistas"]];
   const nav=$("#nav"); nav.innerHTML="";
   items.forEach(([r,ic,lb])=>{
     const b=el("button",route===r?"active":"",`<span class="ic">${ic}</span><span>${lb}</span>`);
@@ -421,6 +423,7 @@ function viewHome(m){
   const b1=el("button","btn","🎲 Desafio rápido (10 questões)"); b1.onclick=()=>startQuiz("all",10); acts.appendChild(b1);
   const b2=el("button","btn ghost","📝 Simulado (15 questões)"); b2.onclick=()=>startQuiz("all",15,true); acts.appendChild(b2);
   const b3=el("button","btn ghost","🃏 Revisar flashcards"); b3.onclick=()=>go("flash"); acts.appendChild(b3);
+  const b4=el("button","btn ghost","🖼️ Treinar imagens"); b4.onclick=()=>go("images"); acts.appendChild(b4);
   m.appendChild(acts);
 
   // Disciplinas
@@ -684,6 +687,72 @@ function viewFlash(m){
     const hint=el("div","center muted small mt","Leia, pense na resposta e toque no card para conferir.");
     m.appendChild(hint);
   }
+}
+
+/* ---------- MÓDULO DE IMAGENS ---------- */
+function imgAreas(){ const s=new Set(IMAGES.map(c=>c.area.replace(/\s*\(.*\)/,"").trim())); return [...s]; }
+function viewImages(m){
+  const head=el("div","card");
+  head.innerHTML=`<h3>🖼️ Imagens — reconhecimento visual</h3>
+    <p class="muted small">Bata o olho nos <b>achados</b> e diga o diagnóstico antes de revelar. Estilo prova prática de patologia e radiologia.</p>`;
+  m.appendChild(head);
+
+  // filtros por área
+  const areas=["Todas", ...imgAreas()];
+  const frow=el("div","chiprow mt");
+  areas.forEach(a=>{
+    const on=(imgd&&imgd.filter||"Todas")===a;
+    const b=el("button","chip"+(on?" on":""),a);
+    b.onclick=()=>{ imgd={filter:a, pool:imgPool(a), idx:0, revealed:false}; render(); };
+    frow.appendChild(b);
+  });
+  m.appendChild(frow);
+
+  if(!imgd) imgd={filter:"Todas", pool:imgPool("Todas"), idx:0, revealed:false};
+  if(imgd.idx>=imgd.pool.length){
+    const c=el("div","card center mt");c.innerHTML=`<div style="font-size:46px">🎉</div><h2>Você viu todas!</h2><p class="muted">Reveja quando quiser — a repetição fixa o reconhecimento.</p>`;
+    const b=el("button","btn mt","🔁 Recomeçar");b.onclick=()=>{imgd.idx=0;imgd.revealed=false;imgd.pool=shuffle(imgd.pool);render();};c.appendChild(b);m.appendChild(c);return;
+  }
+  const card=imgd.pool[imgd.idx];
+  const d=DISCIPLINES[card.discipline];
+  const wrap=el("div","card mt");
+  wrap.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <span class="pill">${d.icon} ${esc(card.area)}</span><span class="muted small">${imgd.idx+1}/${imgd.pool.length}</span></div>`;
+
+  // palco visual: imagem do usuário (src) > esquema svg > ícone neutro
+  const stage=el("div","imgstage mt");
+  if(card.src){ stage.innerHTML=`<img src="${esc(card.src)}" alt="imagem">`; }
+  else if(card.svg){ stage.innerHTML=card.svg; }
+  else { stage.innerHTML=`<div class="imgph">${card.area.includes("Radio")?"🩻":card.area.includes("Semio")?"🩺":"🔬"}<span>achado descrito abaixo</span></div>`; }
+  wrap.appendChild(stage);
+
+  wrap.appendChild(el("div","findings mt",`<b>Achados:</b> ${esc(card.findings)}`));
+
+  if(!imgd.revealed){
+    const b=el("button","btn block mt","👁️ Revelar diagnóstico");
+    b.onclick=()=>{
+      imgd.revealed=true;
+      S.stats.imagesSeen=(S.stats.imagesSeen||0)+1; touchStreak(); addXP(3); save(); renderTopbar(); checkBadges();
+      render();
+    };
+    wrap.appendChild(b);
+  } else {
+    const ex=el("div","explain ok mt");
+    ex.innerHTML=`<span class="tag">✅ ${esc(card.answer)}</span>${esc(card.explanation)}`;
+    wrap.appendChild(ex);
+    const nav=el("div","btnrow mt");
+    const nb=el("button","btn", imgd.idx+1>=imgd.pool.length?"Ver resumo →":"Próxima imagem →");
+    nb.onclick=()=>{ imgd.idx++; imgd.revealed=false; render(); window.scrollTo(0,0); };
+    nav.appendChild(nb);
+    wrap.appendChild(nav);
+  }
+  m.appendChild(wrap);
+
+  m.appendChild(el("div","center muted small mt","Quer usar suas próprias imagens? Veja COMO-ADICIONAR-QUESTOES.md (campo \"src\")."));
+}
+function imgPool(area){
+  let p = area==="Todas" ? IMAGES.slice() : IMAGES.filter(c=>c.area.replace(/\s*\(.*\)/,"").trim()===area);
+  return shuffle(p);
 }
 
 /* ---------- RANKING ---------- */

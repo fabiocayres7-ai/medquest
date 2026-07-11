@@ -76,6 +76,7 @@ Dica: dividam as disciplinas entre o grupo e cada um cria 10 questões da sua pa
 - **91 questões** de raciocínio clínico estilo prova de residência (vinheta + explicação do porquê de cada alternativa; mais da metade em nível "desafio") e **61 flashcards**, nas 8 disciplinas.
 - **Plano de Estudos**: marque cada tema conforme estuda — **as questões só caem dos temas marcados**. 82 temas mapeados ao conteúdo real do semestre.
 - **Resumos**: aba com resumos objetivos por tema (vá adicionando os seus em `js/content.js`).
+- **Imagens**: módulo de reconhecimento visual (patologia/radiologia) — bate o olho nos achados e diz o diagnóstico. Traz esquemas originais e aceita suas próprias imagens.
 - **12 níveis** com curva exigente: Calouro → Interno → Plantonista → Residente R1/R2 → Preceptor → Especialista → Chefe de Equipe → Professor → Livre-Docente → Notório Saber → **Lenda da Mandic** (35 000 XP).
 - **XP** por acerto (mais para questões difíceis) e por revisão de flashcard; **bônus de streak**.
 - **13 conquistas com 5 patamares cada** (🥉 Bronze → 🥈 Prata → 🥇 Ouro → 🏆 Platina → 💠 Diamante) — 65 patamares para colecionar.

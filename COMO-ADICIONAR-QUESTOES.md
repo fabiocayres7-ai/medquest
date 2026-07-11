@@ -137,6 +137,27 @@ Regras:
 
 > **Reset no início das aulas:** para zerar o progresso de teste, abra a aba **Conquistas → Reiniciar progresso** (cada colega faz no seu aparelho), ou apague os dados do site no navegador.
 
+## 4.2) Módulo de Imagens (reconhecimento visual)
+
+Os cards de imagem ficam no bloco **IMAGES** (topo do `content.js`). Cada card mostra os **achados** e o diagnóstico:
+
+```js
+const IMAGES = [
+  { id:"img30", discipline:"pratica", area:"Histologia",
+    findings:"Descreva aqui o que se vê na imagem (os achados a reconhecer).",
+    answer:"Diagnóstico",
+    explanation:"Por que é isso e o que significa.",
+    // opcional: src:"img/minha-foto.jpg"   (sua imagem)
+    // opcional: svg:"<svg>...</svg>"        (esquema)
+  },
+];
+```
+
+- `area`: "Histologia", "Radiologia", "Semiologia", "Macroscopia"… (vira filtro no app).
+- **Usar suas próprias imagens:** crie a pasta `medquest/img/`, coloque o arquivo (ex.: `psammoma.jpg`) e ponha `src:"img/psammoma.jpg"`. O app mostra a imagem no lugar do esquema.
+
+> ⚠️ **Direitos autorais:** imagens de livros/slides de terceiros têm direitos autorais — use-as apenas **localmente** (no seu computador), não faça commit delas no repositório público do GitHub. Os esquemas que já vêm no app são desenhos originais, livres para publicar.
+
 ## 5) Testar se não quebrou
 
 Se o app abrir em branco depois de editar, provavelmente faltou uma vírgula ou aspas.
