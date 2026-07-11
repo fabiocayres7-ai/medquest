@@ -81,7 +81,11 @@ function freshState(){
     stats:{answered:0, correct:0, reviews:0, activeDays:0, perfectQuizzes:0, imagesSeen:0},
     studied:{},                   // {"disc::topic": true} — temas marcados como estudados
     byDisc:{},                    // {disc:{answered,correct}}
+    byTopic:{},                   // {"disc::topic": {answered,correct}}
     seenQ:{},                     // {qid: {correct:bool, count}}
+    errors:{},                    // {qid:true} — questões erradas ainda não recuperadas
+    bookmarks:{},                 // {qid:true} — questões marcadas para revisar
+    weekly:{week:"", xp:0},       // XP da semana (competição semanal)
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
@@ -106,13 +110,26 @@ function save(){ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
 function hash(str){let h=0;for(let i=0;i<str.length;i++){h=(h<<5)-h+str.charCodeAt(i);h|=0;}return h;}
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+function weekStr(){ // semana ISO: "AAAA-Www"
+  const d=new Date(); const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const day=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-day);
+  const yStart=new Date(Date.UTC(t.getUTCFullYear(),0,1));
+  const wk=Math.ceil(((t-yStart)/86400000+1)/7);
+  return t.getUTCFullYear()+"-W"+String(wk).padStart(2,"0");
+}
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function $(sel,el=document){return el.querySelector(sel);}
 function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
 /* ---------- XP / streak / progresso ---------- */
-function addXP(n){ S.xp+=n; }
+function addXP(n){
+  S.xp+=n;
+  const w=weekStr();
+  if(!S.weekly || S.weekly.week!==w) S.weekly={week:w, xp:0};
+  S.weekly.xp+=n;
+}
+function weeklyXP(){ return (S.weekly && S.weekly.week===weekStr()) ? S.weekly.xp : 0; }
 function touchStreak(){
   const t=todayStr();
   if(S.streak.last===t) return;
@@ -122,14 +139,24 @@ function touchStreak(){
   S.streak.last=t;
   if(S.streak.count>S.streak.best) S.streak.best=S.streak.count;
 }
-function recordAnswer(disc, correct, difficulty){
+function recordAnswer(q, correct){
+  const disc=q.discipline, difficulty=q.difficulty;
   touchStreak();
   S.stats.answered++;
   if(!S.byDisc[disc]) S.byDisc[disc]={answered:0,correct:0};
   S.byDisc[disc].answered++;
-  if(correct){ S.stats.correct++; S.byDisc[disc].correct++;
+  const tk=tkey(disc,q.topic);
+  if(!S.byTopic[tk]) S.byTopic[tk]={answered:0,correct:0};
+  S.byTopic[tk].answered++;
+  // registro por questão + controle de erros
+  if(!S.seenQ[q.id]) S.seenQ[q.id]={correct:false,count:0};
+  S.seenQ[q.id].count++;
+  if(correct){
+    S.stats.correct++; S.byDisc[disc].correct++; S.byTopic[tk].correct++;
+    S.seenQ[q.id].correct=true; delete S.errors[q.id];
     const gain = 8*(difficulty||1) + Math.min(10, S.streak.count); addXP(gain); return gain;
   }
+  S.errors[q.id]=true;
   addXP(2); return 2;
 }
 function discProgress(disc){
@@ -248,13 +275,15 @@ function gradeCard(cardId, q){ // q: 0 again,1 hard,2 good,3 easy
    ============================================================ */
 function myRow(){ const li=levelInfo(S.xp); return {
   id:S.profile.id, name:S.profile.name||"Eu", turma:S.profile.turma,
-  xp:S.xp, level:li.level, title:li.title, streak:S.streak.count,
+  xp:S.xp, weeklyXp:weeklyXP(), week:weekStr(), level:li.level, title:li.title, streak:S.streak.count,
   answered:S.stats.answered,
   accuracy:S.stats.answered? Math.round(S.stats.correct/S.stats.answered*100):0
 };}
+let rankMode="total"; // "total" | "semana"
+function rankKey(r){ return rankMode==="semana" ? (r.weeklyXp||0) : (r.xp||0); }
 function localRanking(){
   const rows=[myRow(), ...S.friends.filter(f=>f.id!==S.profile.id)];
-  return rows.sort((a,b)=>b.xp-a.xp);
+  return rows.sort((a,b)=>rankKey(b)-rankKey(a));
 }
 // Código de jogador (para compartilhar sem internet)
 function myCode(){ return btoa(unescape(encodeURIComponent(JSON.stringify(myRow())))); }
@@ -311,9 +340,9 @@ async function fetchOnline(){
     try{
       const res=await fetch(pagesBase()+"/leaderboard.json?t="+Date.now(),{cache:"no-store"});
       if(!res.ok) return null;
-      const j=await res.json(); const players=j.players||{};
+      const j=await res.json(); const players=j.players||{}; const cw=weekStr();
       return Object.keys(players).map(id=>{ const d=players[id]; return {
-        id, name:d.name, xp:d.xp||0, level:d.level||1, streak:d.streak||0,
+        id, name:d.name, xp:d.xp||0, weeklyXp:(d.week===cw?(d.weeklyXp||0):0), level:d.level||1, streak:d.streak||0,
         answered:d.answered||0, accuracy:d.accuracy||0, turma:d.turma,
         title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t }; })
         .filter(r=>!r.turma || r.turma===S.profile.turma);
@@ -341,6 +370,7 @@ let imgd=null;   // {pool, idx, revealed, filter}
 
 function render(){
   ensureMissions();
+  stopQuizTimer();
   renderTopbar();
   const main=$("#main"); main.innerHTML="";
   main.classList.remove("view-enter"); void main.offsetWidth; main.classList.add("view-enter"); // reanima a troca de tela
@@ -417,14 +447,30 @@ function viewHome(m){
   });
   m.appendChild(mw);
 
-  // Ações rápidas
-  m.appendChild(el("div","sectitle","Jogar"));
+  // Meta da semana (competição semanal com a turma)
+  const wk=weeklyXP(), WGOAL=700;
+  const wcard=el("div","card mt");
+  wcard.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline">
+      <b>🗓️ Meta da semana</b><span class="muted small">${wk}/${WGOAL} XP</span></div>
+    <div class="prog" style="margin-top:8px"><span style="width:${Math.min(100,Math.round(wk/WGOAL*100))}%;background:var(--grad)"></span></div>
+    <div class="muted small mt">${wk>=WGOAL?"Meta batida! 🎉 Continue somando para o ranking da semana.":"XP desta semana conta no ranking semanal da turma."}</div>`;
+  m.appendChild(wcard);
+
+  // Praticar
+  m.appendChild(el("div","sectitle","Praticar"));
   const acts=el("div","btnrow");
-  const b1=el("button","btn","🎲 Desafio rápido (10 questões)"); b1.onclick=()=>startQuiz("all",10); acts.appendChild(b1);
-  const b2=el("button","btn ghost","📝 Simulado (15 questões)"); b2.onclick=()=>startQuiz("all",15,true); acts.appendChild(b2);
-  const b3=el("button","btn ghost","🃏 Revisar flashcards"); b3.onclick=()=>go("flash"); acts.appendChild(b3);
-  const b4=el("button","btn ghost","🖼️ Treinar imagens"); b4.onclick=()=>go("images"); acts.appendChild(b4);
+  const b1=el("button","btn","🎲 Desafio rápido"); b1.onclick=()=>startSession({source:"studied",n:10}); acts.appendChild(b1);
+  const b2=el("button","btn","⏱️ Modo Prova"); b2.onclick=()=>startSession({source:"studied",n:15,exam:true,minutes:20}); acts.appendChild(b2);
   m.appendChild(acts);
+  const acts2=el("div","btnrow mt");
+  const ec=errorsCount(), bc=bookmarksCount();
+  const b3=el("button","btn ghost",`🔁 Refazer erros${ec?` (${ec})`:""}`); b3.onclick=()=>startSession({source:"errors",n:20}); if(!ec)b3.style.opacity=".6"; acts2.appendChild(b3);
+  const b4=el("button","btn ghost",`⭐ Marcadas${bc?` (${bc})`:""}`); b4.onclick=()=>startSession({source:"bookmarks",n:Math.max(bc,1)}); if(!bc)b4.style.opacity=".6"; acts2.appendChild(b4);
+  m.appendChild(acts2);
+  const acts3=el("div","btnrow mt");
+  const b5=el("button","btn ghost","🃏 Flashcards"); b5.onclick=()=>go("flash"); acts3.appendChild(b5);
+  const b6=el("button","btn ghost","🖼️ Imagens"); b6.onclick=()=>go("images"); acts3.appendChild(b6);
+  m.appendChild(acts3);
 
   // Disciplinas
   m.appendChild(el("div","sectitle","Estudar por disciplina"));
@@ -563,59 +609,102 @@ function viewSummaries(m){
   }
 }
 
-/* ---------- QUIZ ---------- */
-function startQuiz(disc, n, isSim=false){
-  // TRAVAMENTO: só caem questões de temas marcados como estudados no Plano
-  let pool = unlockedQuestions(disc==="all"?null:disc);
+/* ---------- QUIZ / PRÁTICA ---------- */
+let quizTimerId=null;
+function stopQuizTimer(){ if(quizTimerId){ clearInterval(quizTimerId); quizTimerId=null; } }
+function errorsCount(){ return Object.keys(S.errors||{}).length; }
+function bookmarksCount(){ return Object.keys(S.bookmarks||{}).length; }
+function toggleBookmark(id){ if(S.bookmarks[id]) delete S.bookmarks[id]; else S.bookmarks[id]=true; save(); }
+
+function buildPool(source, disc, topic){
+  if(source==="errors") return QUESTIONS.filter(q=>S.errors[q.id]);
+  if(source==="bookmarks") return QUESTIONS.filter(q=>S.bookmarks[q.id]);
+  let p = unlockedQuestions(disc==="all"?null:disc); // "studied"
+  if(topic) p = p.filter(q=>q.topic===topic);
+  return p;
+}
+function startSession(opts){
+  const source=opts.source||"studied";
+  let pool=buildPool(source, opts.disc, opts.topic);
   if(!pool.length){
-    const nome = disc && disc!=="all" ? DISCIPLINES[disc].name : "nenhuma matéria";
-    toast("Marque temas no Plano de Estudos para liberar questões 📋");
-    go("plan");
-    return;
+    if(source==="errors"){ toast("Nenhum erro pendente — mandou bem! 🎉"); go("home"); return; }
+    if(source==="bookmarks"){ toast("Você ainda não marcou questões (toque na ⭐)."); go("home"); return; }
+    toast("Marque temas no Plano de Estudos para liberar questões 📋"); go("plan"); return;
   }
-  // prioriza questões ainda não dominadas
-  pool.sort((a,b)=>{ const sa=S.seenQ[a.id]?.correct?1:0, sb=S.seenQ[b.id]?.correct?1:0; return sa-sb;});
+  const n=Math.min(opts.n||10, pool.length);
+  if(!opts.exam) pool.sort((a,b)=>{ const sa=S.seenQ[a.id]?.correct?1:0, sb=S.seenQ[b.id]?.correct?1:0; return sa-sb;});
   pool = shuffle(pool.slice(0, Math.max(n, Math.min(pool.length,n*2)))).slice(0,n);
-  quiz={pool, idx:0, correctCount:0, answered:false, mode:isSim?"sim":"quiz", total:pool.length};
+  quiz={pool, idx:0, correctCount:0, answered:false,
+    mode:opts.exam?"exam":(opts.mode||"quiz"), source, exam:!!opts.exam, total:pool.length,
+    answers:new Array(pool.length).fill(null), scored:false,
+    endAt: opts.exam ? Date.now()+(opts.minutes||15)*60000 : null };
   go("quiz");
 }
+// compat: cards de disciplina e "jogar de novo"
+function startQuiz(disc, n, isSim=false){ startSession({source:"studied", disc, n, mode:isSim?"sim":"quiz"}); }
+
 function viewQuiz(m){
   if(!quiz){ const p=el("div","card center"); p.innerHTML=`<p class="muted">Escolha um modo na tela inicial.</p>`;
-    const b=el("button","btn mt","🎲 Desafio rápido");b.onclick=()=>startQuiz("all",10);p.appendChild(b); m.appendChild(p); return; }
+    const b=el("button","btn mt","🎲 Desafio rápido");b.onclick=()=>startSession({source:"studied",n:10});p.appendChild(b); m.appendChild(p); return; }
   if(quiz.idx>=quiz.pool.length){ return quizResult(m); }
   const q=quiz.pool[quiz.idx];
   const d=DISCIPLINES[q.discipline];
+  const dl=["","Base","Intermediária","Desafio"][q.difficulty];
 
   const head=el("div","card");
-  const dl=["","Base","Intermediária","Desafio"][q.difficulty];
+  const marked=!!S.bookmarks[q.id];
   head.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <span class="pill">${d.icon} ${esc(d.name)} · ${q.phase}</span>
-    <span class="diffbadge d${q.difficulty}">${dl}</span></div>
-    <div class="muted small mt">Questão ${quiz.idx+1} de ${quiz.pool.length}</div>`;
+    <span style="display:flex;gap:8px;align-items:center">
+      <span class="diffbadge d${q.difficulty}">${dl}</span>
+      ${quiz.exam?`<span class="timer" id="qtimer">⏱️ --:--</span>`:""}
+      <button class="starbtn${marked?" on":""}" id="starbtn" title="Marcar para revisar">${marked?"★":"☆"}</button>
+    </span></div>
+    <div class="muted small mt">Questão ${quiz.idx+1} de ${quiz.pool.length}${quiz.source==="errors"?" · refazendo erros":quiz.source==="bookmarks"?" · marcadas":""}</div>`;
   m.appendChild(head);
+  head.querySelector("#starbtn").onclick=()=>{ toggleBookmark(q.id); render(); };
 
   const body=el("div","card mt");
   if(q.vignette) body.appendChild(el("div","q-vignette",esc(q.vignette)));
   body.appendChild(el("div","q-stem",esc(q.question)));
   const opts=el("div");
   q.options.forEach((opt,i)=>{
-    const b=el("button","opt",`<span class="k">${String.fromCharCode(65+i)}</span>${esc(opt)}`);
-    b.onclick=()=>answer(i,body,opts,q);
+    const sel = quiz.exam && quiz.answers[quiz.idx]===i;
+    const b=el("button","opt"+(sel?" sel":""),`<span class="k">${String.fromCharCode(65+i)}</span>${esc(opt)}`);
+    b.onclick=()=> quiz.exam ? examSelect(i) : answer(i,body,opts,q);
     opts.appendChild(b);
   });
   body.appendChild(opts);
+
+  if(quiz.exam){
+    const nav=el("div","btnrow mt");
+    const nb=el("button","btn", quiz.idx+1>=quiz.pool.length?"✅ Finalizar prova":"Próxima →");
+    nb.onclick=()=>{ quiz.idx++; render(); window.scrollTo(0,0); };
+    nav.appendChild(nb);
+    if(quiz.idx>0){ const pb=el("button","btn ghost","← Voltar"); pb.onclick=()=>{ quiz.idx--; render(); window.scrollTo(0,0); }; nav.appendChild(pb); }
+    body.appendChild(nav);
+  }
   m.appendChild(body);
+
+  // cronômetro do modo prova
+  if(quiz.exam && quiz.endAt){
+    const upd=()=>{
+      const left=Math.max(0, Math.round((quiz.endAt-Date.now())/1000));
+      const t=$("#qtimer"); if(t){ const mm=String(Math.floor(left/60)).padStart(2,"0"), ss=String(left%60).padStart(2,"0"); t.textContent="⏱️ "+mm+":"+ss; t.classList.toggle("low",left<=30); }
+      if(left<=0){ stopQuizTimer(); toast("Tempo esgotado!"); quiz.idx=quiz.pool.length; render(); }
+    };
+    upd(); quizTimerId=setInterval(upd,1000);
+  }
 }
+function examSelect(i){ quiz.answers[quiz.idx]=i; save(); render(); }
 function answer(i,body,opts,q){
   if(quiz.answered) return;
   quiz.answered=true;
   const correct = i===q.answer;
-  const gain = recordAnswer(q.discipline, correct, q.difficulty);
-  if(!S.seenQ[q.id]) S.seenQ[q.id]={correct:false,count:0};
-  S.seenQ[q.id].count++; if(correct) S.seenQ[q.id].correct=true;
+  const gain = recordAnswer(q, correct);
+  quiz.answers[quiz.idx]=i;
   if(correct) quiz.correctCount++;
   bumpMission("m_q",1); if(correct) bumpMission("m_acc",1);
-
   [...opts.children].forEach((b,j)=>{
     b.classList.add("disabled");
     if(j===q.answer) b.classList.add("correct");
@@ -633,20 +722,48 @@ function answer(i,body,opts,q){
   window.scrollTo(0,document.body.scrollHeight);
 }
 function quizResult(m){
+  stopQuizTimer();
+  // pontua o modo prova ao finalizar
+  if(quiz.exam && !quiz.scored){
+    quiz.correctCount=0;
+    quiz.pool.forEach((q,idx)=>{ const sel=quiz.answers[idx]; const ok=sel===q.answer;
+      recordAnswer(q, ok); if(ok) quiz.correctCount++; bumpMission("m_q",1); if(ok) bumpMission("m_acc",1); });
+    quiz.scored=true; save(); renderTopbar(); checkBadges(); syncOnline();
+  }
   const pct=Math.round(quiz.correctCount/quiz.total*100);
-  if(quiz.mode==="sim" && quiz.total>=8 && pct===100){ S.flags.perfectQuiz=true; S.stats.perfectQuizzes=(S.stats.perfectQuizzes||0)+1; save(); checkBadges(); }
+  if((quiz.mode==="sim"||quiz.exam) && quiz.total>=8 && pct===100){ S.flags.perfectQuiz=true; S.stats.perfectQuizzes=(S.stats.perfectQuizzes||0)+1; save(); checkBadges(); }
+
   const c=el("div","card center");
   const em = pct>=80?"🏆":pct>=60?"👏":"📖";
   c.innerHTML=`<div style="font-size:52px">${em}</div>
     <h2>${quiz.correctCount}/${quiz.total} acertos (${pct}%)</h2>
-    <p class="muted">${pct>=80?"Excelente! Você dominou este bloco.":pct>=60?"Bom trabalho — revise os erros.":"Continue treinando, o próximo vai melhor!"}</p>`;
+    <p class="muted">${pct>=80?"Excelente! Você dominou este bloco.":pct>=60?"Bom trabalho — revise os erros abaixo.":"Continue treinando, o próximo vai melhor!"}</p>`;
   const row=el("div","btnrow center mt");row.style.justifyContent="center";
-  const b1=el("button","btn","🔁 Jogar de novo");b1.onclick=()=>startQuiz("all",quiz.total,quiz.mode==="sim");
+  const b1=el("button","btn","🔁 De novo");b1.onclick=()=>startSession({source:quiz.source, n:quiz.total, exam:quiz.exam, minutes: quiz.exam?15:0});
+  if(quiz.answers.some((a,idx)=>a!==quiz.pool[idx].answer)){
+    const be=el("button","btn ghost","🔁 Refazer só os erros");be.onclick=()=>startSession({source:"errors",n:20});
+    row.appendChild(be);
+  }
   const b2=el("button","btn ghost","🏠 Início");b2.onclick=()=>{quiz=null;go("home");};
   row.append(b1,b2);
   c.appendChild(row);
   m.appendChild(c);
-  quiz.pool=[]; // trava reentrada
+
+  // revisão (modo prova mostra tudo; prática mostra os erros)
+  m.appendChild(el("div","sectitle","Revisão"));
+  quiz.pool.forEach((q,idx)=>{
+    const sel=quiz.answers[idx], ok=sel===q.answer;
+    if(!quiz.exam && ok) return; // na prática, revisa só o que errou
+    const d=DISCIPLINES[q.discipline];
+    const item=el("div","card mt");
+    item.innerHTML=`<div class="muted small">${d.icon} ${esc(q.topic)}</div>
+      <div style="font-weight:700;margin:6px 0">${esc(q.question)}</div>
+      <div class="small"><b>Sua resposta:</b> ${sel!=null?String.fromCharCode(65+sel)+") "+esc(q.options[sel]):"(em branco)"} ${ok?"✅":"❌"}</div>
+      <div class="small" style="color:var(--good)"><b>Correta:</b> ${String.fromCharCode(65+q.answer)}) ${esc(q.options[q.answer])}</div>
+      <div class="explain ${ok?"ok":"no"} mt">${esc(q.explanation)}</div>`;
+    m.appendChild(item);
+  });
+  quiz.pool=quiz.pool.slice(); // mantém para revisão; idx já ao fim
 }
 
 /* ---------- FLASHCARDS ---------- */
@@ -777,6 +894,13 @@ function viewRank(m){
     m.appendChild(pub);
   }
 
+  // alternador Total / Semana
+  const seg=el("div","chiprow mt");
+  [["total","🏆 Geral"],["semana","🗓️ Semana"]].forEach(([k,lb])=>{
+    const b=el("button","chip"+(rankMode===k?" on":""),lb); b.onclick=()=>{ rankMode=k; render(); }; seg.appendChild(b);
+  });
+  m.appendChild(seg);
+
   const list=el("div","mt"); list.id="ranklist";
   renderRankList(list, localRanking());
   m.appendChild(list);
@@ -786,7 +910,7 @@ function viewRank(m){
       if(!rows.find(r=>r.id===S.profile.id)) rows.push(myRow());
       // mistura com colegas locais que ainda não publicaram
       S.friends.forEach(f=>{ if(!rows.find(r=>r.id===f.id)) rows.push(f); });
-      rows.sort((a,b)=>b.xp-a.xp); renderRankList(list,rows);
+      rows.sort((a,b)=>rankKey(b)-rankKey(a)); renderRankList(list,rows);
     }});
   }
 
@@ -814,7 +938,7 @@ function renderRankList(container, rows){
       <div class="av">${esc(initial)}</div>
       <div class="info"><div class="nm">${esc(r.name||"Jogador")}${isMe?" (você)":""}</div>
         <div class="sub">Nv ${r.level} · ${esc(r.title||"")} · 🔥${r.streak||0} · ${r.answered||0} q · ${r.accuracy||0}%</div></div>
-      <div class="xp">${r.xp} XP</div>`;
+      <div class="xp">${rankMode==="semana"?(r.weeklyXp||0)+" XP/sem":(r.xp||0)+" XP"}</div>`;
     container.appendChild(row);
   });
   if(rows.length<=1){ container.appendChild(el("div","muted small center mt","Adicione colegas abaixo para começar a competição! 👇")); }
@@ -866,6 +990,34 @@ function viewBadges(m){
     g2.appendChild(c);
   }
   m.appendChild(g2);
+
+  // Pontos fracos por tema (a partir de 3 respostas no tema)
+  const topics=Object.keys(S.byTopic||{}).map(k=>{
+    const bt=S.byTopic[k]; const i=k.indexOf("::"); const disc=k.slice(0,i), topic=k.slice(i+2);
+    return {disc, topic, answered:bt.answered, acc: bt.answered?Math.round(bt.correct/bt.answered*100):0};
+  }).filter(t=>t.answered>=3 && DISCIPLINES[t.disc]);
+  if(topics.length){
+    const weak=topics.slice().sort((a,b)=>a.acc-b.acc).slice(0,6);
+    m.appendChild(el("div","sectitle","Pontos fracos (priorize esses temas)"));
+    const wrap=el("div");
+    weak.forEach(t=>{
+      const d=DISCIPLINES[t.disc];
+      const row=el("div","mission");
+      const col = t.acc<50?"var(--bad)":t.acc<70?"var(--warn)":"var(--good)";
+      row.innerHTML=`<div class="em" style="background:${d.color}22">${d.icon}</div>
+        <div class="info"><div class="nm">${esc(t.topic)}</div>
+          <div class="mprog"><span style="width:${t.acc}%;background:${col}"></span></div></div>
+        <div class="rw" style="color:${col}">${t.acc}% · ${t.answered}q</div>`;
+      row.style.cursor="pointer";
+      row.onclick=()=>{ // treina esse tema (se liberado)
+        if(!isStudied(t.disc,t.topic)){ toast("Libere o tema no Plano primeiro."); return; }
+        const pool=QUESTIONS.filter(q=>q.discipline===t.disc&&q.topic===t.topic);
+        if(pool.length) startSession({source:"studied", disc:t.disc, topic:t.topic, n:Math.min(pool.length,10)});
+      };
+      wrap.appendChild(row);
+    });
+    m.appendChild(wrap);
+  }
 
   // Reset
   const rc=el("div","center mt");

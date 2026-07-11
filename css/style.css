@@ -196,6 +196,16 @@ code{background:var(--surface-3);padding:1px 6px;border-radius:6px;font-size:.9e
 .opt.wrong .k{background:var(--bad);color:#2a0710;border-color:transparent}
 .opt.disabled{cursor:default}
 .opt.disabled:hover{transform:none}
+.opt.sel{border-color:var(--accent);background:var(--grad-soft)}
+.opt.sel .k{background:var(--accent);color:#fff;border-color:transparent}
+.timer{font-weight:800;font-size:13px;background:var(--surface-3);border:1px solid var(--stroke);
+  padding:3px 10px;border-radius:999px;font-variant-numeric:tabular-nums}
+.timer.low{color:#fff;background:linear-gradient(135deg,#e11d48,#9f1239);border-color:transparent;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.55}}
+.starbtn{background:var(--surface-3);border:1px solid var(--stroke);color:var(--gold);width:30px;height:30px;
+  border-radius:9px;font-size:16px;line-height:1;display:grid;place-items:center;transition:.15s}
+.starbtn:hover{border-color:var(--gold)}
+.starbtn.on{background:rgba(244,193,69,.18);border-color:var(--gold)}
 .explain{background:var(--surface-2);border:1px solid var(--stroke);border-left:3px solid var(--accent);
   border-radius:0 var(--r-sm) var(--r-sm) 0;padding:15px;margin-top:8px;font-size:14px;animation:viewIn .3s ease}
 .explain .tag{font-weight:800;margin-bottom:7px;display:block;letter-spacing:.2px}

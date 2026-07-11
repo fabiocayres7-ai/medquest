@@ -42,6 +42,8 @@ jobs:
               name:     String(data.name || "Jogador").slice(0, 40),
               turma:    String(data.turma || "").slice(0, 60),
               xp:       Math.max(0, parseInt(data.xp) || 0),
+              weeklyXp: Math.max(0, parseInt(data.weeklyXp) || 0),
+              week:     String(data.week || "").slice(0, 10),
               level:    Math.max(1, parseInt(data.level) || 1),
               streak:   Math.max(0, parseInt(data.streak) || 0),
               answered: Math.max(0, parseInt(data.answered) || 0),
