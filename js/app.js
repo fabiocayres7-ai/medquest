@@ -640,39 +640,8 @@ function viewPlan(m){
   m.appendChild(foot);
 }
 
-/* ---------- RESUMOS ---------- */
+/* ---------- Anotações pessoais + Resumos ---------- */
 function hasSummary(disc,topic){ return !!SUMMARIES[tkey(disc,topic)]; }
-function viewSummaries(m){
-  const total=Object.keys(DISCIPLINES).reduce((a,d)=>a+planTopics(d).length,0);
-  const withS=Object.keys(SUMMARIES).length;
-  const head=el("div","card");
-  head.innerHTML=`<h3>📖 Resumos</h3>
-    <p class="muted small">Resumos objetivos por tema. Toque para abrir. Vá adicionando os seus editando <code>js/content.js</code> (bloco <b>SUMMARIES</b>) — o guia está no COMO-ADICIONAR-QUESTOES.md.</p>
-    <div class="muted small mt">${withS}/${total} temas com resumo</div>`;
-  m.appendChild(head);
-
-  for(const disc in DISCIPLINES){
-    const d=DISCIPLINES[disc];
-    const topics=planTopics(disc);
-    const comResumo=topics.filter(t=>hasSummary(disc,t.topic));
-    const card=el("div","card mt");
-    card.appendChild(el("div","",`<b>${d.icon} ${esc(d.name)}</b> <span class="muted small">(${comResumo.length}/${topics.length})</span>`));
-    if(!comResumo.length){
-      card.appendChild(el("div","muted small mt","Nenhum resumo ainda. Adicione em SUMMARIES: chave \""+disc+"::&lt;tema&gt;\"."));
-    }
-    comResumo.forEach(t=>{
-      const item=el("div"); item.style.cssText="border-top:1px solid var(--stroke);margin-top:10px;padding-top:10px";
-      const btn=el("button","opt"); btn.style.marginBottom="0";
-      btn.innerHTML=`📖 <b>${esc(t.topic)}</b> <span class="pill" style="float:right">${t.phase}</span>`;
-      const body=el("div","explain mt hidden"); body.innerHTML=esc(SUMMARIES[tkey(disc,t.topic)]).replace(/\n/g,"<br>");
-      btn.onclick=()=>{ body.classList.toggle("hidden"); };
-      item.append(btn,body); card.appendChild(item);
-    });
-    m.appendChild(card);
-  }
-}
-
-/* ---------- Anotações pessoais + Resumos (v2) ---------- */
 function getNote(disc,topic){ return S.notes[tkey(disc,topic)]||""; }
 function hasNote(disc,topic){ return !!(S.notes[tkey(disc,topic)]||"").trim(); }
 function setNote(disc,topic,txt){ const k=tkey(disc,topic); if(txt.trim()) S.notes[k]=txt; else delete S.notes[k]; save(); }
@@ -1478,7 +1447,8 @@ function viewBadges(m){
   const rsave=el("button","btn sm mt","Salvar lembrete");
   const applyR=()=>{ S.settings.reminder={enabled:rcb.checked, time:tin.value||"19:00", lastDate:(S.settings.reminder||{}).lastDate||""};
     if(rcb.checked){ try{ if(window.Notification && Notification.permission==="default") Notification.requestPermission(); }catch(e){} }
-    save(); toast("Lembrete "+(rcb.checked?"ativado":"desativado")+" ✅"); };
+    save(); toast("Lembrete "+(rcb.checked?"ativado":"desativado")+" ✅");
+    if(S.settings.push && pushSupported()) subscribePush(); }; // reenvia inscrição com o novo horário
   rsave.onclick=applyR; rcb.onchange=()=>{ if(rcb.checked){ try{ if(window.Notification&&Notification.permission==="default") Notification.requestPermission(); }catch(e){} } };
   rcard.appendChild(rsave);
   // Push (app fechado)
@@ -1684,11 +1654,6 @@ function pomoPausar(){ pomo.running=false; pomoRender(); }
 function pomoRetomar(){ pomo.running=true; pomoRender(); }
 function pomoReiniciar(){ pomo.left=((pomo.phase==="break")?pBreak():pFocus())*60; pomo.running=true; pomoRender(); } // reinicia a fase atual
 function pomoParar(){ clearInterval(pomoIv); pomoIv=null; pomo={phase:"idle",left:0,running:false,open:pomo.open}; pomoRender(); }
-function pomoCyclePreset(){
-  const cur=POMO_PRESETS.findIndex(p=>p[0]===pFocus()&&p[1]===pBreak());
-  const nx=POMO_PRESETS[(cur+1)%POMO_PRESETS.length];
-  S.settings.pomoFocus=nx[0]; S.settings.pomoBreak=nx[1]; save(); pomoRender();
-}
 function pomoBtn(id,label,cls){ return `<button class="pmb ${cls||""}" id="${id}">${label}</button>`; }
 function pomoRender(){
   let box=$("#pomo"); if(!box){ box=el("div"); box.id="pomo"; document.body.appendChild(box); }
