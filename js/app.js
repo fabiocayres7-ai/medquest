@@ -828,8 +828,23 @@ function startErrorCards(){
 
 function viewQuiz(m){
   if(quiz && !quiz.startedAt) quiz.startedAt=Date.now();
-  if(!quiz){ const p=el("div","card center"); p.innerHTML=`<p class="muted">Escolha um modo na tela inicial.</p>`;
-    const b=el("button","btn mt","🎲 Desafio rápido");b.onclick=()=>startSession({source:"studied",n:10});p.appendChild(b); m.appendChild(p); return; }
+  if(!quiz){
+    const head=el("div","card");
+    head.innerHTML=`<h3>❓ Questões</h3><p class="muted small">Escolha um modo de treino. As questões vêm dos temas que você marcou no Plano.</p>`;
+    m.appendChild(head);
+    const ec=errorsCount(), bc=bookmarksCount();
+    const rows=[
+      ["🎲 Desafio rápido (10)", ()=>startSession({source:"studied",n:10}), false],
+      ["⏱️ Modo Prova (15, cronometrado)", ()=>startSession({source:"studied",n:15,exam:true,minutes:20}), false],
+      ["🧠 Revisão inteligente", ()=>startSmartReview(15), true],
+      [`🎓 Revisão de véspera (${(nextExam()||{}).phase||"prova"})`, startExamReview, true],
+      [`🔁 Refazer erros${ec?` (${ec})`:""}`, ()=>startSession({source:"errors",n:20}), true],
+      [`⭐ Marcadas${bc?` (${bc})`:""}`, ()=>startSession({source:"bookmarks",n:Math.max(bc,1)}), true],
+      ["🎯 Pegadinhas", startPegadinhas, true],
+    ];
+    rows.forEach(([lb,fn,ghost])=>{ const b=el("button","btn"+(ghost?" ghost":"")+" block mt",lb); b.onclick=fn; m.appendChild(b); });
+    return;
+  }
   if(quiz.idx>=quiz.pool.length){ return quizResult(m); }
   const q=quiz.pool[quiz.idx];
   const d=DISCIPLINES[q.discipline];
