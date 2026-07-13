@@ -395,6 +395,7 @@ function render(){
   else if(route==="flash") viewFlash(main);
   else if(route==="images") viewImages(main);
   else if(route==="summaries") viewResumos(main);
+  else if(route==="dvd") viewDuvidas(main);
   else if(route==="rank") viewRank(main);
   else if(route==="badges") viewBadges(main);
   renderNav();
@@ -417,7 +418,7 @@ function renderTopbar(){
 }
 
 function renderNav(){
-  const items=[["home","🏠","Início"],["plan","📋","Plano"],["quiz","❓","Questões"],["flash","🃏","Flashcards"],["images","🖼️","Imagens"],["summaries","📖","Resumos"],["rank","🏆","Ranking"],["badges","🎖️","Conquistas"]];
+  const items=[["home","🏠","Início"],["plan","📋","Plano"],["quiz","❓","Questões"],["flash","🃏","Flashcards"],["images","🖼️","Imagens"],["summaries","📖","Resumos"],["dvd","💬","Dúvidas"],["rank","🏆","Ranking"],["badges","🎖️","Conquistas"]];
   const nav=$("#nav"); nav.innerHTML="";
   items.forEach(([r,ic,lb])=>{
     const b=el("button",route===r?"active":"",`<span class="ic">${ic}</span><span>${lb}</span>`);
@@ -1154,6 +1155,68 @@ function imgPool(area){
   return shuffle(p);
 }
 
+/* ---------- DÚVIDAS (fórum por matéria) ---------- */
+let dvdFilter="all";
+function viewDuvidas(m){
+  const head=el("div","card");
+  head.innerHTML=`<h3>💬 Dúvidas da turma</h3><p class="muted small">Poste dúvidas por matéria e responda os colegas. O autor marca ✅ quando for resolvida.</p>`;
+  m.appendChild(head);
+  if(!supaOn()){ m.appendChild(el("div","card mt muted small","As dúvidas usam a nuvem (Supabase), que não está configurada.")); return; }
+
+  // Nova dúvida
+  const form=el("div","card mt");
+  form.appendChild(el("b",null,"Nova dúvida / recado"));
+  const selD=el("select","input mt"); const oa=document.createElement("option"); oa.value=""; oa.textContent="Matéria (opcional)"; selD.appendChild(oa);
+  for(const d in DISCIPLINES){ const o=document.createElement("option"); o.value=d; o.textContent=DISCIPLINES[d].name; selD.appendChild(o); }
+  form.appendChild(selD);
+  const ta=el("textarea","input mt"); ta.placeholder="Escreva sua dúvida ou recado..."; form.appendChild(ta);
+  const kindRow=el("div","chiprow mt"); let kind="duvida";
+  const kd=el("button","chip on","❓ Dúvida"), kr=el("button","chip","📢 Recado");
+  kd.onclick=()=>{kind="duvida";kd.classList.add("on");kr.classList.remove("on");};
+  kr.onclick=()=>{kind="recado";kr.classList.add("on");kd.classList.remove("on");};
+  kindRow.append(kd,kr); form.appendChild(kindRow);
+  const pb=el("button","btn sm mt","📨 Publicar");
+  pb.onclick=async()=>{ if(!ta.value.trim())return; pb.disabled=true; const ok=await muralPost(ta.value,{discipline:selD.value||null, kind}); pb.disabled=false; if(ok){ toast("Publicado! 💬"); render(); } else toast("Falha ao publicar (rodou o SQL das dúvidas?)."); };
+  form.appendChild(pb); m.appendChild(form);
+
+  // Filtro por matéria
+  const fr=el("div","chiprow mt");
+  const mk=(val,lb)=>{ const c=el("button","chip"+(dvdFilter===val?" on":""),lb); c.onclick=()=>{ dvdFilter=val; render(); }; return c; };
+  fr.appendChild(mk("all","Todas"));
+  for(const d in DISCIPLINES) fr.appendChild(mk(d, DISCIPLINES[d].icon));
+  m.appendChild(fr);
+
+  // Lista
+  const listc=el("div","mt"); listc.innerHTML=`<div class="muted small">Carregando dúvidas...</div>`; m.appendChild(listc);
+  muralFetch(dvdFilter).then(posts=>{
+    listc.innerHTML="";
+    if(!posts){ listc.innerHTML=`<div class="card muted small">Não consegui carregar (rode o SQL das dúvidas no Supabase).</div>`; return; }
+    if(!posts.length){ listc.innerHTML=`<div class="card muted small">Nenhuma dúvida ${dvdFilter!=="all"?"nessa matéria ":""}ainda. Seja o primeiro! 👋</div>`; return; }
+    posts.forEach(p=>{
+      const d=p.discipline && DISCIPLINES[p.discipline];
+      const when=(p.created_at||"").slice(0,10);
+      const badge = p.kind==="recado" ? `<span class="pill">📢 recado</span>` : `<span class="pill">❓ dúvida</span>`;
+      const res = p.resolved ? `<span class="pill" style="color:var(--good)">✅ resolvido</span>` : "";
+      const it=el("div","card mt");
+      it.innerHTML=`<div style="display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;align-items:center">
+          <div style="font-weight:700">${esc(p.name||"Anônimo")} <span class="muted small">· ${esc(when)}</span></div>
+          <div>${d?`<span class="pill">${d.icon}</span> `:""}${badge} ${res}</div></div>
+        <div class="small mt">${esc(p.text||"")}</div>`;
+      const rbox=el("div","mt hidden");
+      const rbtn=el("button","btn ghost sm mt","💬 Respostas");
+      async function loadReplies(){
+        const reps=await repliesFetch(p.id); rbox.innerHTML="";
+        (reps||[]).forEach(r=>{ const rr=el("div","small"); rr.style.cssText="border-left:2px solid var(--stroke);padding:4px 0 4px 8px;margin-top:6px"; rr.innerHTML=`<b>${esc(r.name||"Anônimo")}:</b> ${esc(r.text||"")}`; rbox.appendChild(rr); });
+        const rta=el("input","input mt"); rta.placeholder="Responder..."; rbox.appendChild(rta);
+        const rpb=el("button","btn ghost sm mt","Responder"); rpb.onclick=async()=>{ if(!rta.value.trim())return; rpb.disabled=true; const ok=await replyPost(p.id, rta.value); rpb.disabled=false; if(ok){ rta.value=""; toast("Respondido!"); loadReplies(); } }; rbox.appendChild(rpb);
+        if(p.author_id===S.profile.id){ const rv=el("button","btn ghost sm mt", p.resolved?"↩️ Reabrir":"✅ Marcar resolvido"); rv.style.marginLeft="6px"; rv.onclick=async()=>{ await muralResolve(p.id, !p.resolved); toast("Atualizado!"); render(); }; rbox.appendChild(rv); }
+      }
+      rbtn.onclick=async()=>{ if(!rbox.classList.contains("hidden")){ rbox.classList.add("hidden"); return; } rbox.classList.remove("hidden"); rbox.innerHTML=`<div class="muted small">...</div>`; await loadReplies(); };
+      it.append(rbtn, rbox); listc.appendChild(it);
+    });
+  });
+}
+
 /* ---------- RANKING ---------- */
 function viewRank(m){
   const p=provider();
@@ -1244,22 +1307,6 @@ function viewRank(m){
   }
   m.appendChild(duel);
 
-  // ---- Mural da turma (Supabase) ----
-  if(supaOn()){
-    const mur=el("div","card mt");
-    mur.innerHTML=`<h3>💬 Mural da turma</h3><p class="muted small mb">Deixe dúvidas, dicas e recados para a turma.</p>`;
-    const ta=el("textarea","input"); ta.placeholder="Escreva algo para a turma...";
-    mur.appendChild(ta);
-    const listc=el("div","mt"); listc.innerHTML=`<div class="muted small">Carregando mural...</div>`;
-    const loadMural=async()=>{ const posts=await muralFetch(); listc.innerHTML="";
-      if(!posts){ listc.innerHTML=`<div class="muted small">Não consegui carregar o mural (o SQL já foi rodado no Supabase?).</div>`; return; }
-      if(!posts.length){ listc.innerHTML=`<div class="muted small">Sem posts ainda. Seja o primeiro! 👋</div>`; return; }
-      posts.forEach(p=>{ const it=el("div","card mt"); it.style.padding="12px"; const when=(p.created_at||"").slice(0,10);
-        it.innerHTML=`<div style="font-weight:700">${esc(p.name||"Anônimo")} <span class="muted small">· ${esc(when)}${p.topic?" · "+esc(p.topic):""}</span></div><div class="small mt">${esc(p.text||"")}</div>`;
-        listc.appendChild(it); }); };
-    const pb=el("button","btn sm mt","📨 Postar"); pb.onclick=async()=>{ if(!ta.value.trim())return; pb.disabled=true; const ok=await muralPost(ta.value); pb.disabled=false; if(ok){ ta.value=""; toast("Postado! 💬"); loadMural(); } else toast("Falha ao postar (o SQL já foi rodado?)."); };
-    mur.append(pb, listc); m.appendChild(mur); loadMural();
-  }
 
   if(online()){
     fetchOnline().then(rows=>{ if(rows&&rows.length){
@@ -1750,20 +1797,34 @@ async function cloudLoad(id){
     S=migrate(st); save(); applyTheme(); applyFontScale(); toast("Progresso baixado da nuvem ✅"); go("home");
   }catch(e){ toast("Backup da nuvem inválido."); }
 }
-async function muralFetch(){
+async function muralFetch(disc){
   if(!supaOn()) return null;
   try{
-    const url=CFG.SUPABASE_URL+"/rest/v1/mural?turma=eq."+encodeURIComponent(S.profile.turma)+"&select=*&order=id.desc&limit=60";
+    let url=CFG.SUPABASE_URL+"/rest/v1/mural?turma=eq."+encodeURIComponent(S.profile.turma)+"&select=*&order=id.desc&limit=100";
+    if(disc && disc!=="all") url+="&discipline=eq."+encodeURIComponent(disc);
     const res=await fetch(url,{headers:supaHeaders()}); return res.ok? await res.json() : null;
   }catch(e){ return null; }
 }
-async function muralPost(text, topic){
-  if(!supaOn()) return false;
+async function muralPost(text, opts){
+  if(!supaOn()) return false; opts=opts||{};
   try{
-    const body=[{ turma:S.profile.turma, name:S.profile.name||"Anônimo", text:String(text).slice(0,600), topic:topic||null }];
+    const body=[{ turma:S.profile.turma, name:S.profile.name||"Anônimo", author_id:S.profile.id,
+      text:String(text).slice(0,600), discipline:opts.discipline||null, topic:opts.topic||null, kind:opts.kind||"duvida" }];
     const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/mural",{method:"POST", headers:supaHeaders(), body:JSON.stringify(body)});
     return res.ok;
   }catch(e){ return false; }
+}
+async function repliesFetch(postId){
+  if(!supaOn()) return null;
+  try{ const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/mural_replies?post_id=eq."+encodeURIComponent(postId)+"&select=*&order=id.asc&limit=100",{headers:supaHeaders()}); return res.ok?await res.json():null; }catch(e){ return null; }
+}
+async function replyPost(postId, text){
+  if(!supaOn()) return false;
+  try{ const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/mural_replies",{method:"POST", headers:supaHeaders(), body:JSON.stringify([{post_id:postId, name:S.profile.name||"Anônimo", text:String(text).slice(0,600)}])}); return res.ok; }catch(e){ return false; }
+}
+async function muralResolve(postId, val){
+  if(!supaOn()) return false;
+  try{ const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/mural?id=eq."+encodeURIComponent(postId),{method:"PATCH", headers:supaHeaders(), body:JSON.stringify({resolved:val})}); return res.ok; }catch(e){ return false; }
 }
 // ---- Desafio da turma (challenges) ----
 function chId(){ return "c"+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36); }
