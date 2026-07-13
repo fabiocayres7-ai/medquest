@@ -96,6 +96,8 @@ function freshState(){
     dailyQ:{date:"", done:false, correct:false}, // questão do dia
     errReasons:{sabia:0, conceito:0, atencao:0}, // "por que errei"
     taught:{}, // "ensine um colega": {"disc::topic": explicação}
+    priority:{}, // temas marcados como "cai muito" {"disc::topic": true}
+    trilha:{}, // progresso da trilha por tema {"disc::topic": {resumo:bool}}
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
@@ -203,6 +205,9 @@ function setStudied(disc,topic,val){
   if(val && !topicReleased(disc,topic)) return false;   // conteúdo ainda não liberado
   const k=tkey(disc,topic); if(val) S.studied[k]=true; else delete S.studied[k]; save(); return true;
 }
+function isPriority(disc,topic){ return !!(S.priority||{})[tkey(disc,topic)]; }
+function togglePriority(disc,topic){ if(!S.priority)S.priority={}; const k=tkey(disc,topic); if(S.priority[k]) delete S.priority[k]; else S.priority[k]=true; save(); }
+function priorityCount(){ return Object.keys(S.priority||{}).length; }
 
 /* ---------- Cronograma (liberação por semana) ---------- */
 function cronogramaActive(){ return CRONOGRAMA && CRONOGRAMA.active && Array.isArray(CRONOGRAMA.weeks) && CRONOGRAMA.weeks.length>0; }
@@ -626,12 +631,15 @@ function viewPlan(m){
       if(t.phase!==curPhase){ curPhase=t.phase; card.appendChild(el("div","small muted mt",`— ${curPhase==="N1"?"N1 (1ª prova)":"N2 (2ª prova)"} —`)); }
       const row=el("label","mission"); row.style.cursor="pointer";
       const checked=t.studied?"checked":"";
+      const pr=isPriority(disc,t.topic);
       const qlabel = t.qCount ? `${t.qCount} questõe${t.qCount>1?"s":""}` : "sem questões ainda";
       row.innerHTML=`<input type="checkbox" ${checked} style="width:20px;height:20px;accent-color:${d.color}">
         <div class="info"><div class="nm">${esc(t.topic)}</div><div class="muted small">${qlabel}${hasSummary(disc,t.topic)?" · 📖 resumo":""}</div></div>
+        <button class="firebtn${pr?" on":""}" title="Marcar como 'cai muito'">🔥</button>
         <div class="rw" style="color:${t.studied?'var(--good)':'var(--muted2)'}">${t.studied?"estudado":""}</div>`;
       const cb=row.querySelector("input");
       cb.onchange=()=>{ setStudied(disc,t.topic,cb.checked); render(); };
+      row.querySelector(".firebtn").onclick=(e)=>{ e.preventDefault(); togglePriority(disc,t.topic); render(); };
       card.appendChild(row);
     });
     m.appendChild(card);
@@ -725,14 +733,18 @@ function startSession(opts){
   const source=opts.source||"studied";
   let pool=buildPool(source, opts.disc, opts.topic);
   if(opts.phase && opts.phase!=="all") pool=pool.filter(q=>q.phase===opts.phase);
+  if(opts.priorityOnly) pool=pool.filter(q=>isPriority(q.discipline,q.topic));
   if(!pool.length){
+    if(opts.priorityOnly){ toast("Marque temas como 🔥 'cai muito' no Plano primeiro."); go("plan"); return; }
     if(opts.phase){ toast("Marque temas de "+opts.phase+" no Plano para liberar questões 📋"); go("plan"); return; }
     if(source==="errors"){ toast("Nenhum erro pendente — mandou bem! 🎉"); go("home"); return; }
     if(source==="bookmarks"){ toast("Você ainda não marcou questões (toque na ⭐)."); go("home"); return; }
     toast("Marque temas no Plano de Estudos para liberar questões 📋"); go("plan"); return;
   }
   const n=Math.min(opts.n||10, pool.length);
-  if(!opts.exam) pool.sort((a,b)=>{ const sa=S.seenQ[a.id]?.correct?1:0, sb=S.seenQ[b.id]?.correct?1:0; return sa-sb;});
+  if(!opts.exam) pool.sort((a,b)=>{ // prioriza temas "cai muito" e não-dominadas
+    const pa=isPriority(a.discipline,a.topic)?1:0, pb=isPriority(b.discipline,b.topic)?1:0; if(pa!==pb) return pb-pa;
+    const sa=S.seenQ[a.id]?.correct?1:0, sb=S.seenQ[b.id]?.correct?1:0; return sa-sb;});
   pool = shuffle(pool.slice(0, Math.max(n, Math.min(pool.length,n*2)))).slice(0,n);
   quiz={pool, idx:0, correctCount:0, answered:false,
     mode:opts.exam?"exam":(opts.mode||"quiz"), source, exam:!!opts.exam, total:pool.length,
@@ -742,6 +754,46 @@ function startSession(opts){
 }
 // compat: cards de disciplina e "jogar de novo"
 function startQuiz(disc, n, isSim=false){ startSession({source:"studied", disc, n, mode:isSim?"sim":"quiz"}); }
+function trilhaStatus(disc,topic){
+  const k=tkey(disc,topic); const tr=(S.trilha||{})[k]||{};
+  const hasRes=hasSummary(disc,topic);
+  const bt=(S.byTopic||{})[k]||{correct:0};
+  const qn=QUESTIONS.filter(q=>q.discipline===disc&&q.topic===topic).length;
+  const need=Math.max(1,Math.min(3, qn||3));
+  const steps=[
+    {id:"resumo", label: hasRes?"📖 Ler o resumo":"📖 Resumo (sem resumo ainda)", done: hasRes? !!tr.resumo : true},
+    {id:"flash",  label:"🃏 Revisar flashcards", done: !!tr.flash},
+    {id:"quest",  label:`❓ Acertar ${need} questões (${Math.min(bt.correct||0,need)}/${need})`, done:(bt.correct||0)>=need},
+  ];
+  return {steps, pct: Math.round(steps.filter(s=>s.done).length/steps.length*100)};
+}
+function trilhaModal(){
+  const bg=el("div","modal-bg"); const mo=el("div","modal"); mo.style.textAlign="left"; mo.style.maxHeight="88vh"; mo.style.overflow="auto";
+  mo.innerHTML=`<h3 style="text-align:center">🧭 Trilha de estudo</h3><p class="muted small">Domine um tema passo a passo: resumo → flashcards → questões.</p>`;
+  const studied=[]; for(const disc in DISCIPLINES) planTopics(disc).forEach(t=>{ if(t.studied) studied.push({disc,topic:t.topic}); });
+  const sel=el("select","input mt");
+  if(!studied.length){ const o=document.createElement("option"); o.textContent="(marque temas no Plano primeiro)"; sel.appendChild(o); }
+  studied.forEach(t=>{ const o=document.createElement("option"); o.value=tkey(t.disc,t.topic); o.textContent=DISCIPLINES[t.disc].icon+" "+t.topic; sel.appendChild(o); });
+  mo.appendChild(sel);
+  const body=el("div","mt"); mo.appendChild(body);
+  const cl=el("button","btn ghost block mt","Fechar"); cl.onclick=()=>bg.remove(); mo.appendChild(cl);
+  function renderSteps(){
+    const k=sel.value; body.innerHTML=""; if(!k||k.indexOf("::")<0) return;
+    const i=k.indexOf("::"), disc=k.slice(0,i), topic=k.slice(i+2);
+    const st=trilhaStatus(disc,topic);
+    body.innerHTML=`<div class="prog"><span style="width:${st.pct}%;background:var(--good)"></span></div><div class="muted small mt mb">${st.pct}% concluído${st.pct===100?" — tema dominado! 🎉":""}</div>`;
+    st.steps.forEach(s=>{
+      const row=el("div","mission");
+      row.innerHTML=`<div class="em">${s.done?"✅":"⬜"}</div><div class="info"><div class="nm">${s.label}</div></div>`;
+      if(s.id==="resumo" && hasSummary(disc,topic)){ const b=el("button","btn ghost sm","Ler"); b.onclick=()=>{ if(!S.trilha)S.trilha={}; S.trilha[k]=Object.assign(S.trilha[k]||{},{resumo:true}); save(); renderSteps(); const sm=el("div","explain mt"); sm.innerHTML=esc(SUMMARIES[k]).replace(/\n/g,"<br>"); body.appendChild(sm); }; row.appendChild(b); }
+      else if(s.id==="flash"){ const b=el("button","btn ghost sm","Ir"); b.onclick=()=>{ if(!S.trilha)S.trilha={}; S.trilha[k]=Object.assign(S.trilha[k]||{},{flash:true}); save(); bg.remove(); go("flash"); }; row.appendChild(b); }
+      else if(s.id==="quest"){ const qn=QUESTIONS.filter(q=>q.discipline===disc&&q.topic===topic).length; if(qn){ const b=el("button","btn ghost sm","Treinar"); b.onclick=()=>{ bg.remove(); startSession({source:"studied",disc,topic,n:Math.min(10,qn)}); }; row.appendChild(b); } }
+      body.appendChild(row);
+    });
+  }
+  sel.onchange=renderSteps; renderSteps();
+  bg.appendChild(mo); bg.onclick=e=>{if(e.target===bg)bg.remove();}; document.body.appendChild(bg);
+}
 function teachModal(){
   const bg=el("div","modal-bg"); const mo=el("div","modal"); mo.style.textAlign="left";
   mo.innerHTML=`<h3 style="text-align:center">👩‍🏫 Ensine um colega</h3><p class="muted small">Explicar com suas palavras é a melhor forma de fixar. Escreva a explicação de um tema como se ensinasse alguém.</p>`;
@@ -885,6 +937,8 @@ function viewQuiz(m){
       [`🔁 Refazer erros${ec?` (${ec})`:""}`, ()=>startSession({source:"errors",n:20}), true],
       [`⭐ Marcadas${bc?` (${bc})`:""}`, ()=>startSession({source:"bookmarks",n:Math.max(bc,1)}), true],
       ["🎯 Pegadinhas", startPegadinhas, true],
+      [`🔥 Focar nos que caem muito${priorityCount()?` (${priorityCount()})`:""}`, ()=>startSession({source:"studied",priorityOnly:true,n:15}), true],
+      ["🧭 Trilha de estudo (guiada)", trilhaModal, true],
       ["👩‍🏫 Ensine um tema (fixa muito!)", teachModal, true],
     ];
     rows.forEach(([lb,fn,ghost])=>{ const b=el("button","btn"+(ghost?" ghost":"")+" block mt",lb); b.onclick=fn; m.appendChild(b); });
