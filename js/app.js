@@ -95,6 +95,7 @@ function freshState(){
               reminder:{enabled:false, time:"19:00", lastDate:""}}, // config
     dailyQ:{date:"", done:false, correct:false}, // questão do dia
     errReasons:{sabia:0, conceito:0, atencao:0}, // "por que errei"
+    taught:{}, // "ensine um colega": {"disc::topic": explicação}
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
@@ -385,7 +386,7 @@ let imgd=null;   // {pool, idx, revealed, filter}
 
 function render(){
   ensureMissions();
-  stopQuizTimer();
+  stopQuizTimer(); stopQClock();
   renderTopbar();
   const main=$("#main"); main.innerHTML="";
   main.classList.remove("view-enter"); void main.offsetWidth; main.classList.add("view-enter"); // reanima a troca de tela
@@ -401,7 +402,7 @@ function render(){
   renderNav();
   save();
 }
-function go(r){ route=r; if(r==="quiz"&&!quiz) quiz=null; if(r==="flash") flash=null; render(); window.scrollTo(0,0);}
+function go(r){ route=r; if(r==="quiz" && quiz && quiz.idx>=quiz.pool.length) quiz=null; if(r==="flash") flash=null; render(); window.scrollTo(0,0);}
 
 function renderTopbar(){
   const li=levelInfo(S.xp);
@@ -707,6 +708,8 @@ function viewResumos(m){
 /* ---------- QUIZ / PRÁTICA ---------- */
 let quizTimerId=null;
 function stopQuizTimer(){ if(quizTimerId){ clearInterval(quizTimerId); quizTimerId=null; } }
+let qClockId=null;
+function stopQClock(){ if(qClockId){ clearInterval(qClockId); qClockId=null; } }
 function errorsCount(){ return Object.keys(S.errors||{}).length; }
 function bookmarksCount(){ return Object.keys(S.bookmarks||{}).length; }
 function toggleBookmark(id){ if(S.bookmarks[id]) delete S.bookmarks[id]; else S.bookmarks[id]=true; save(); }
@@ -721,7 +724,9 @@ function buildPool(source, disc, topic){
 function startSession(opts){
   const source=opts.source||"studied";
   let pool=buildPool(source, opts.disc, opts.topic);
+  if(opts.phase && opts.phase!=="all") pool=pool.filter(q=>q.phase===opts.phase);
   if(!pool.length){
+    if(opts.phase){ toast("Marque temas de "+opts.phase+" no Plano para liberar questões 📋"); go("plan"); return; }
     if(source==="errors"){ toast("Nenhum erro pendente — mandou bem! 🎉"); go("home"); return; }
     if(source==="bookmarks"){ toast("Você ainda não marcou questões (toque na ⭐)."); go("home"); return; }
     toast("Marque temas no Plano de Estudos para liberar questões 📋"); go("plan"); return;
@@ -737,6 +742,44 @@ function startSession(opts){
 }
 // compat: cards de disciplina e "jogar de novo"
 function startQuiz(disc, n, isSim=false){ startSession({source:"studied", disc, n, mode:isSim?"sim":"quiz"}); }
+function teachModal(){
+  const bg=el("div","modal-bg"); const mo=el("div","modal"); mo.style.textAlign="left";
+  mo.innerHTML=`<h3 style="text-align:center">👩‍🏫 Ensine um colega</h3><p class="muted small">Explicar com suas palavras é a melhor forma de fixar. Escreva a explicação de um tema como se ensinasse alguém.</p>`;
+  mo.appendChild(el("div","small muted mt","Tema:"));
+  const sel=el("select","input");
+  const studiedTopics=[];
+  for(const disc in DISCIPLINES) planTopics(disc).forEach(t=>{ if(t.studied) studiedTopics.push({disc, topic:t.topic}); });
+  if(!studiedTopics.length){ const o=document.createElement("option"); o.textContent="(marque temas no Plano primeiro)"; sel.appendChild(o); }
+  studiedTopics.forEach(t=>{ const o=document.createElement("option"); o.value=tkey(t.disc,t.topic); o.textContent=DISCIPLINES[t.disc].icon+" "+t.topic; sel.appendChild(o); });
+  mo.appendChild(sel);
+  const ta=el("textarea","input mt"); ta.style.minHeight="120px"; ta.placeholder="Explique o tema com suas palavras..."; mo.appendChild(ta);
+  const upd=()=>{ const k=sel.value; ta.value=(S.taught&&S.taught[k])||""; }; sel.onchange=upd; upd();
+  let share=false;
+  if(supaOn()){ const sh=el("label","mission mt"); sh.style.cursor="pointer"; sh.innerHTML=`<input type="checkbox" style="width:20px;height:20px"><div class="info"><div class="nm">Publicar como dica no fórum de Dúvidas</div></div>`; sh.querySelector("input").onchange=(e)=>share=e.target.checked; mo.appendChild(sh); }
+  const sv=el("button","btn block mt","💾 Salvar explicação");
+  sv.onclick=async()=>{ if(!sel.value||!ta.value.trim()){ toast("Escolha um tema e escreva a explicação."); return; }
+    const k=sel.value, first=!(S.taught&&S.taught[k]); if(!S.taught)S.taught={}; S.taught[k]=ta.value;
+    if(first) addXP(20); save(); renderTopbar(); checkBadges();
+    const i=k.indexOf("::"), disc=k.slice(0,i), topic=k.slice(i+2);
+    if(share) await muralPost("💡 Dica sobre "+topic+":\n\n"+ta.value, {discipline:disc, kind:"recado"});
+    toast(first?"Explicação salva! +20 XP 👩‍🏫":"Explicação atualizada!"); bg.remove(); };
+  const cl=el("button","btn ghost block mt","Fechar"); cl.onclick=()=>bg.remove();
+  mo.append(sv,cl); bg.appendChild(mo); bg.onclick=e=>{if(e.target===bg)bg.remove();}; document.body.appendChild(bg);
+}
+function examConfigModal(){
+  const bg=el("div","modal-bg"); const mo=el("div","modal"); mo.style.textAlign="left";
+  mo.innerHTML=`<h3 style="text-align:center">🎯 Simulado personalizado</h3><p class="muted small">Monte como a prova real: nº de questões, tempo e conteúdo.</p>`;
+  function num(label,val,min,max){ const w=el("div","mt"); w.innerHTML=`<div class="small muted">${label}</div>`; const i=el("input","input"); i.type="number"; i.min=min;i.max=max;i.value=val; w.appendChild(i); mo.appendChild(w); return i; }
+  const ni=num("Nº de questões",20,3,60);
+  const mi=num("Tempo (minutos)",30,3,240);
+  mo.appendChild(el("div","small muted mt","Prova (fase):"));
+  const ph=el("select","input"); [["all","Todas"],["N1","N1 (1ª prova)"],["N2","N2 (2ª prova)"]].forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;ph.appendChild(o);}); mo.appendChild(ph);
+  mo.appendChild(el("div","small muted mt","Matéria:"));
+  const dsel=el("select","input"); const oa=document.createElement("option"); oa.value="all"; oa.textContent="Todas"; dsel.appendChild(oa); for(const d in DISCIPLINES){const o=document.createElement("option");o.value=d;o.textContent=DISCIPLINES[d].name;dsel.appendChild(o);} mo.appendChild(dsel);
+  const go1=el("button","btn block mt","▶ Começar simulado"); go1.onclick=()=>{ bg.remove(); startSession({source:"studied", disc:dsel.value, phase:ph.value, n:parseInt(ni.value)||20, exam:true, minutes:parseInt(mi.value)||30}); };
+  const cl=el("button","btn ghost block mt","Cancelar"); cl.onclick=()=>bg.remove();
+  mo.append(go1,cl); bg.appendChild(mo); bg.onclick=e=>{if(e.target===bg)bg.remove();}; document.body.appendChild(bg);
+}
 
 // ---- Duelo (assíncrono, via código) ----
 function startFromQuestions(qs, duel){
@@ -836,11 +879,13 @@ function viewQuiz(m){
     const rows=[
       ["🎲 Desafio rápido (10)", ()=>startSession({source:"studied",n:10}), false],
       ["⏱️ Modo Prova (15, cronometrado)", ()=>startSession({source:"studied",n:15,exam:true,minutes:20}), false],
+      ["🎯 Simulado personalizado (prova real)", examConfigModal, false],
       ["🧠 Revisão inteligente", ()=>startSmartReview(15), true],
       [`🎓 Revisão de véspera (${(nextExam()||{}).phase||"prova"})`, startExamReview, true],
       [`🔁 Refazer erros${ec?` (${ec})`:""}`, ()=>startSession({source:"errors",n:20}), true],
       [`⭐ Marcadas${bc?` (${bc})`:""}`, ()=>startSession({source:"bookmarks",n:Math.max(bc,1)}), true],
       ["🎯 Pegadinhas", startPegadinhas, true],
+      ["👩‍🏫 Ensine um tema (fixa muito!)", teachModal, true],
     ];
     rows.forEach(([lb,fn,ghost])=>{ const b=el("button","btn"+(ghost?" ghost":"")+" block mt",lb); b.onclick=fn; m.appendChild(b); });
     return;
@@ -850,12 +895,14 @@ function viewQuiz(m){
   const d=DISCIPLINES[q.discipline];
   const dl=["","Base","Intermediária","Desafio"][q.difficulty];
 
+  if(quiz.qShownIdx!==quiz.idx){ quiz.qStart=Date.now(); quiz.qShownIdx=quiz.idx; }
   const head=el("div","card");
   const marked=!!S.bookmarks[q.id];
   head.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <span class="pill">${d.icon} ${esc(d.name)} · ${q.phase}</span>
     <span style="display:flex;gap:8px;align-items:center">
       <span class="diffbadge d${q.difficulty}">${dl}</span>
+      <span class="timer" id="qclock" title="tempo nesta questão">⏱ 0:00</span>
       ${quiz.exam?`<span class="timer" id="qtimer">⏱️ --:--</span>`:""}
       <button class="starbtn${marked?" on":""}" id="starbtn" title="Marcar para revisar">${marked?"★":"☆"}</button>
     </span></div>
@@ -884,6 +931,10 @@ function viewQuiz(m){
     body.appendChild(nav);
   }
   m.appendChild(body);
+
+  // relógio da questão (tempo gasto nesta questão)
+  const qc=()=>{ const e0=$("#qclock"); if(e0){ const s=Math.max(0,Math.floor((Date.now()-(quiz.qStart||Date.now()))/1000)); e0.textContent="⏱ "+Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); } };
+  qc(); qClockId=setInterval(qc,1000);
 
   // cronômetro do modo prova
   if(quiz.exam && quiz.endAt){
@@ -952,9 +1003,11 @@ function quizResult(m){
 
   const c=el("div","card center");
   const em = pct>=80?"🏆":pct>=60?"👏":"📖";
+  const avgSec = quiz.startedAt ? Math.round((Date.now()-quiz.startedAt)/1000/Math.max(1,quiz.total)) : 0;
   c.innerHTML=`<div style="font-size:52px">${em}</div>
     <h2>${quiz.correctCount}/${quiz.total} acertos (${pct}%)</h2>
-    <p class="muted">${pct>=80?"Excelente! Você dominou este bloco.":pct>=60?"Bom trabalho — revise os erros abaixo.":"Continue treinando, o próximo vai melhor!"}</p>`;
+    <p class="muted">${pct>=80?"Excelente! Você dominou este bloco.":pct>=60?"Bom trabalho — revise os erros abaixo.":"Continue treinando, o próximo vai melhor!"}</p>
+    ${avgSec?`<div class="pill">⏱ ${avgSec}s por questão em média</div>`:""}`;
   const row=el("div","btnrow center mt");row.style.justifyContent="center";
   if(!quiz.duel && !quiz.challenge){
     const b1=el("button","btn","🔁 De novo");b1.onclick=()=>startSession({source:quiz.source, n:quiz.total, exam:quiz.exam, minutes: quiz.exam?15:0});
@@ -1024,6 +1077,7 @@ function quizResult(m){
       <div class="small"><b>Sua resposta:</b> ${sel!=null?String.fromCharCode(65+sel)+") "+esc(q.options[sel]):"(em branco)"} ${ok?"✅":"❌"}</div>
       <div class="small" style="color:var(--good)"><b>Correta:</b> ${String.fromCharCode(65+q.answer)}) ${esc(q.options[q.answer])}</div>
       <div class="explain ${ok?"ok":"no"} mt">${esc(q.explanation)}</div>`;
+    if(supaOn()){ const rb=el("button","btn ghost sm mt","⚠️ Reportar erro nesta questão"); rb.onclick=()=>reportQuestion(q.id); item.appendChild(rb); }
     m.appendChild(item);
   });
   quiz.pool=quiz.pool.slice(); // mantém para revisão; idx já ao fim
@@ -1805,6 +1859,12 @@ async function replyPost(postId, text){
 async function muralResolve(postId, val){
   if(!supaOn()) return false;
   try{ const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/mural?id=eq."+encodeURIComponent(postId),{method:"PATCH", headers:supaHeaders(), body:JSON.stringify({resolved:val})}); return res.ok; }catch(e){ return false; }
+}
+async function reportQuestion(qid){
+  if(!supaOn()){ toast("Reportar precisa da nuvem (Supabase)."); return; }
+  const reason=window.prompt("O que está errado nesta questão? (ex.: gabarito, enunciado, digitação)"); if(!reason) return;
+  try{ const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/reports",{method:"POST",headers:supaHeaders(),body:JSON.stringify([{question_id:qid, reason:String(reason).slice(0,400), name:S.profile.name||"", turma:S.profile.turma}])});
+    toast(res.ok?"Reportado, obrigado! 🙏":"Falha ao reportar (rodou o SQL de reports?)."); }catch(e){ toast("Sem conexão."); }
 }
 // ---- Desafio da turma (challenges) ----
 function chId(){ return "c"+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36); }
