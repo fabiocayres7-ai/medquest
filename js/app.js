@@ -295,9 +295,24 @@ function myRow(){ const li=levelInfo(S.xp); return {
   id:S.profile.id, name:S.profile.name||"Eu", turma:S.profile.turma,
   xp:S.xp, weeklyXp:weeklyXP(), week:weekStr(), level:li.level, title:li.title, streak:S.streak.count,
   answered:S.stats.answered, studied:studiedCount().studied,
+  byDisc:Object.fromEntries(Object.keys(S.byDisc||{}).map(d=>[d,(S.byDisc[d]||{}).correct||0])),
   accuracy:S.stats.answered? Math.round(S.stats.correct/S.stats.answered*100):0
 };}
 let rankMode="total"; // "total" | "semana"
+let rankDisc=null;     // matéria selecionada no ranking por matéria
+function renderMatRank(container, rows){
+  container.innerHTML="";
+  const disc=rankDisc||Object.keys(DISCIPLINES)[0];
+  const scored=rows.map(r=>({r, dc:(r.byDisc&&r.byDisc[disc])||0})).filter(x=>x.dc>0).sort((a,b)=>b.dc-a.dc).slice(0,20);
+  if(!scored.length){ container.appendChild(el("div","card muted small","Ninguém pontuou em "+DISCIPLINES[disc].name+" ainda. Responda questões dessa matéria!")); return; }
+  scored.forEach((x,i)=>{ const r=x.r, isMe=r.id===S.profile.id;
+    const row=el("div","rank"+(isMe?" me":"")+(i<3?" top"+(i+1):""));
+    row.innerHTML=`<div class="pos">${i+1}º</div><div class="av">${esc((r.name||"?").charAt(0).toUpperCase())}</div>
+      <div class="info"><div class="nm">${esc(r.name||"Jogador")}${isMe?" (você)":""}</div></div>
+      <div class="xp">${x.dc} acertos</div>`;
+    container.appendChild(row);
+  });
+}
 function rankKey(r){ return rankMode==="semana" ? (r.weeklyXp||0) : (r.xp||0); }
 function localRanking(){
   const rows=[myRow(), ...S.friends.filter(f=>f.id!==S.profile.id)];
@@ -340,6 +355,7 @@ async function syncOnline(){
         xp:S.xp, level:levelInfo(S.xp).level, streak:S.streak.count,
         answered:S.stats.answered, studied:studiedCount().studied,
         weekly_xp:weeklyXP(), week:weekStr(),
+        by_disc:JSON.stringify(Object.fromEntries(Object.keys(S.byDisc||{}).map(d=>[d,(S.byDisc[d]||{}).correct||0]))),
         accuracy:S.stats.answered?Math.round(S.stats.correct/S.stats.answered*100):0 }])
     }).catch(()=>{});
   }, 2500);
@@ -352,9 +368,10 @@ async function fetchOnline(){
       const res=await fetch(url,{headers:supaHeaders()});
       if(!res.ok) return null;
       const data=await res.json(); const cw=weekStr();
-      return data.map(d=>({id:d.player_id,name:d.name,xp:d.xp||0,level:d.level||1,streak:d.streak||0,
-        answered:d.answered||0, studied:d.studied||0, weeklyXp:(d.week===cw?(d.weekly_xp||0):0),
-        accuracy:d.accuracy||0, title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t}));
+      return data.map(d=>{ let bd={}; try{ bd=JSON.parse(d.by_disc||"{}"); }catch(e){}
+        return {id:d.player_id,name:d.name,xp:d.xp||0,level:d.level||1,streak:d.streak||0,
+        answered:d.answered||0, studied:d.studied||0, weeklyXp:(d.week===cw?(d.weekly_xp||0):0), byDisc:bd,
+        accuracy:d.accuracy||0, title:(LEVELS[(d.level||1)-1]||LEVELS[0]).t}; });
     }catch(e){ return null; }
   }
   if(p==="github"){
@@ -1297,8 +1314,18 @@ function viewDuvidas(m){
       const rbox=el("div","mt hidden");
       const rbtn=el("button","btn ghost sm mt","💬 Respostas");
       async function loadReplies(){
-        const reps=await repliesFetch(p.id); rbox.innerHTML="";
-        (reps||[]).forEach(r=>{ const rr=el("div","small"); rr.style.cssText="border-left:2px solid var(--stroke);padding:4px 0 4px 8px;margin-top:6px"; rr.innerHTML=`<b>${esc(r.name||"Anônimo")}:</b> ${esc(r.text||"")}`; rbox.appendChild(rr); });
+        const reps=await repliesFetch(p.id)||[]; rbox.innerHTML="";
+        let reacts={};
+        if(reps.length){ try{ const ids=reps.map(r=>r.id).join(","); const rr=await (await fetch(CFG.SUPABASE_URL+"/rest/v1/reply_reactions?reply_id=in.("+ids+")&select=reply_id,player_id",{headers:supaHeaders()})).json(); (rr||[]).forEach(x=>{ (reacts[x.reply_id]=reacts[x.reply_id]||[]).push(x.player_id); }); }catch(e){} }
+        reps.forEach(r=>{
+          const isBest=p.best_reply_id===r.id; const likes=reacts[r.id]||[]; const liked=likes.includes(S.profile.id);
+          const rr=el("div"); rr.style.cssText="border-left:2px solid "+(isBest?"var(--good)":"var(--stroke)")+";padding:6px 0 6px 10px;margin-top:8px";
+          rr.innerHTML=`<div class="small"><b>${esc(r.name||"Anônimo")}:</b> ${esc(r.text||"")} ${isBest?'<span class="pill" style="color:var(--good)">⭐ melhor</span>':""}</div>`;
+          const act=el("div","btnrow mt");
+          const lk=el("button","btn ghost sm"+(liked?" on":""),"👍 "+likes.length); lk.onclick=async()=>{ await likeReply(r.id); loadReplies(); }; act.appendChild(lk);
+          if(p.author_id===S.profile.id && !isBest){ const bb=el("button","btn ghost sm","⭐ Melhor"); bb.onclick=async()=>{ await setBestReply(p.id,r.id); p.best_reply_id=r.id; toast("Marcada como melhor! ⭐"); loadReplies(); }; act.appendChild(bb); }
+          rr.appendChild(act); rbox.appendChild(rr);
+        });
         const rta=el("input","input mt"); rta.placeholder="Responder..."; rbox.appendChild(rta);
         const rpb=el("button","btn ghost sm mt","Responder"); rpb.onclick=async()=>{ if(!rta.value.trim())return; rpb.disabled=true; const ok=await replyPost(p.id, rta.value); rpb.disabled=false; if(ok){ rta.value=""; toast("Respondido!"); loadReplies(); } }; rbox.appendChild(rpb);
         if(p.author_id===S.profile.id){ const rv=el("button","btn ghost sm mt", p.resolved?"↩️ Reabrir":"✅ Marcar resolvido"); rv.style.marginLeft="6px"; rv.onclick=async()=>{ await muralResolve(p.id, !p.resolved); toast("Atualizado!"); render(); }; rbox.appendChild(rv); }
@@ -1341,6 +1368,17 @@ function viewRank(m){
   const list=el("div","mt"); list.id="ranklist";
   renderRankList(list, localRanking());
   m.appendChild(list);
+
+  // Ranking por matéria
+  m.appendChild(el("div","sectitle","Ranking por matéria"));
+  const matWrap=el("div");
+  if(!rankDisc) rankDisc=Object.keys(DISCIPLINES)[0];
+  const matChips=el("div","chiprow");
+  for(const dk in DISCIPLINES){ const c=el("button","chip"+(rankDisc===dk?" on":""),DISCIPLINES[dk].icon+" "+DISCIPLINES[dk].name.split(" ")[0]); c.onclick=()=>{ rankDisc=dk; render(); }; matChips.appendChild(c); }
+  matWrap.appendChild(matChips);
+  const matBox=el("div","mt"); matBox.id="matbox";
+  renderMatRank(matBox, localRanking());
+  matWrap.appendChild(matBox); m.appendChild(matWrap);
 
   // Progresso da turma
   m.appendChild(el("div","sectitle","Progresso da turma"));
@@ -1405,7 +1443,7 @@ function viewRank(m){
       if(!rows.find(r=>r.id===S.profile.id)) rows.push(myRow());
       // mistura com colegas locais que ainda não publicaram
       S.friends.forEach(f=>{ if(!rows.find(r=>r.id===f.id)) rows.push(f); });
-      rows.sort((a,b)=>rankKey(b)-rankKey(a)); renderRankList(list,rows); renderTurma(turmaBox,rows);
+      rows.sort((a,b)=>rankKey(b)-rankKey(a)); renderRankList(list,rows); renderTurma(turmaBox,rows); renderMatRank(matBox,rows);
     }});
   }
 
@@ -1913,6 +1951,18 @@ async function replyPost(postId, text){
 async function muralResolve(postId, val){
   if(!supaOn()) return false;
   try{ const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/mural?id=eq."+encodeURIComponent(postId),{method:"PATCH", headers:supaHeaders(), body:JSON.stringify({resolved:val})}); return res.ok; }catch(e){ return false; }
+}
+async function likeReply(replyId){
+  if(!supaOn()) return;
+  try{
+    const mine=await (await fetch(CFG.SUPABASE_URL+"/rest/v1/reply_reactions?reply_id=eq."+replyId+"&player_id=eq."+encodeURIComponent(S.profile.id)+"&select=reply_id",{headers:supaHeaders()})).json();
+    if(mine && mine.length){ await fetch(CFG.SUPABASE_URL+"/rest/v1/reply_reactions?reply_id=eq."+replyId+"&player_id=eq."+encodeURIComponent(S.profile.id),{method:"DELETE",headers:supaHeaders()}); }
+    else { await fetch(CFG.SUPABASE_URL+"/rest/v1/reply_reactions",{method:"POST",headers:supaHeaders(),body:JSON.stringify([{reply_id:replyId,player_id:S.profile.id}])}); }
+  }catch(e){}
+}
+async function setBestReply(postId, replyId){
+  if(!supaOn()) return;
+  try{ await fetch(CFG.SUPABASE_URL+"/rest/v1/mural?id=eq."+encodeURIComponent(postId),{method:"PATCH",headers:supaHeaders(),body:JSON.stringify({best_reply_id:replyId})}); }catch(e){}
 }
 async function reportQuestion(qid){
   if(!supaOn()){ toast("Reportar precisa da nuvem (Supabase)."); return; }
