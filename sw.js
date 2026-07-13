@@ -1,5 +1,5 @@
 /* MedQuest 5 — Service Worker (offline + instalável) */
-const CACHE = "medquest-shell-v1";
+const CACHE = "medquest-shell-v2";
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
   "./css/style.css", "./js/config.js", "./js/content.js", "./js/app.js",
@@ -37,13 +37,16 @@ self.addEventListener("notificationclick", (e) => {
   }));
 });
 
-// Network-first: sempre pega a versão nova quando online; usa o cache quando offline.
+// Network-first FRESCO: força buscar a versão nova (ignora cache HTTP) quando online;
+// usa o cache só quando offline. Assim os updates aparecem na hora.
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  const sameOrigin = e.request.url.startsWith(self.location.origin);
+  const req = sameOrigin ? new Request(e.request.url, { cache: "no-store" }) : e.request;
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then((resp) => {
-        if (resp && resp.ok && e.request.url.startsWith(self.location.origin)) {
+        if (resp && resp.ok && sameOrigin) {
           const copy = resp.clone();
           caches.open(CACHE).then((c) => c.put(e.request, copy));
         }
