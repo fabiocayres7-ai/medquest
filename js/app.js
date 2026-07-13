@@ -961,6 +961,7 @@ function quizResult(m){
       recordAnswer(q, ok); if(ok) quiz.correctCount++; bumpMission("m_q",1); if(ok) bumpMission("m_acc",1); });
     quiz.scored=true; save(); renderTopbar(); checkBadges(); syncOnline();
   }
+  if(quiz.challenge && quiz.scored && !quiz.chSubmitted){ challengeSubmit(quiz.challenge.id, quiz.correctCount, quiz.total); quiz.chSubmitted=true; }
   const pct=Math.round(quiz.correctCount/quiz.total*100);
   if((quiz.mode==="sim"||quiz.exam) && quiz.total>=8 && pct===100){ S.flags.perfectQuiz=true; S.stats.perfectQuizzes=(S.stats.perfectQuizzes||0)+1; save(); checkBadges(); }
 
@@ -970,7 +971,7 @@ function quizResult(m){
     <h2>${quiz.correctCount}/${quiz.total} acertos (${pct}%)</h2>
     <p class="muted">${pct>=80?"Excelente! Você dominou este bloco.":pct>=60?"Bom trabalho — revise os erros abaixo.":"Continue treinando, o próximo vai melhor!"}</p>`;
   const row=el("div","btnrow center mt");row.style.justifyContent="center";
-  if(!quiz.duel){
+  if(!quiz.duel && !quiz.challenge){
     const b1=el("button","btn","🔁 De novo");b1.onclick=()=>startSession({source:quiz.source, n:quiz.total, exam:quiz.exam, minutes: quiz.exam?15:0});
     row.appendChild(b1);
     if(quiz.answers.some((a,idx)=>a!==quiz.pool[idx].answer)){
@@ -982,6 +983,26 @@ function quizResult(m){
   row.append(b2);
   c.appendChild(row);
   m.appendChild(c);
+
+  // ---- Placar do desafio ----
+  if(quiz.challenge){
+    const cb=el("div","card mt");
+    cb.innerHTML=`<h3>🏆 ${esc(quiz.challenge.title||"Desafio")}</h3><div class="muted small">Placar da turma:</div>`;
+    const boardc=el("div","mt"); boardc.innerHTML=`<div class="muted small">Carregando placar...</div>`;
+    cb.appendChild(boardc); m.appendChild(cb);
+    challengeBoard(quiz.challenge.id).then(rows=>{
+      boardc.innerHTML="";
+      if(!rows){ boardc.innerHTML=`<div class="muted small">Não consegui carregar o placar.</div>`; return; }
+      rows.forEach((r,i)=>{
+        const isMe=r.player_id===S.profile.id;
+        const rr=el("div","rank"+(isMe?" me":"")+(i<3?" top"+(i+1):""));
+        rr.innerHTML=`<div class="pos">${i+1}º</div><div class="av">${esc((r.name||"?").charAt(0).toUpperCase())}</div>
+          <div class="info"><div class="nm">${esc(r.name||"Jogador")}${isMe?" (você)":""}</div></div>
+          <div class="xp">${r.correct}/${r.total}</div>`;
+        boardc.appendChild(rr);
+      });
+    });
+  }
 
   // ---- Duelo ----
   if(quiz.duel){
@@ -1171,6 +1192,38 @@ function viewRank(m){
   const turmaBox=el("div"); turmaBox.id="turmabox";
   renderTurma(turmaBox, localRanking());
   m.appendChild(turmaBox);
+
+  // ---- Desafios da turma ----
+  if(supaOn()){
+    const chc=el("div","card mt");
+    chc.innerHTML=`<h3>🏆 Desafios da turma</h3><p class="muted small mb">Todos jogam as MESMAS questões e disputam o placar. Crie um e chame a galera!</p>`;
+    const cbtn=el("button","btn sm","➕ Criar desafio"); cbtn.onclick=challengeCreateModal; chc.appendChild(cbtn);
+    const clist=el("div","mt"); clist.innerHTML=`<div class="muted small">Carregando desafios...</div>`; chc.appendChild(clist);
+    m.appendChild(chc);
+    challengesFetch().then(list=>{
+      clist.innerHTML="";
+      if(!list){ clist.innerHTML=`<div class="muted small">Não consegui carregar (o SQL do desafio já foi rodado?).</div>`; return; }
+      if(!list.length){ clist.innerHTML=`<div class="muted small">Nenhum desafio ativo. Crie o primeiro! 👆</div>`; return; }
+      list.forEach(ch=>{
+        let n=0; try{ n=JSON.parse(ch.question_ids).length; }catch(e){}
+        const endsTxt = ch.ends_at ? ("até "+new Date(ch.ends_at).toLocaleDateString("pt-BR")) : "";
+        const it=el("div","card mt"); it.style.padding="12px";
+        it.innerHTML=`<div style="font-weight:800">${esc(ch.title||"Desafio")}</div>
+          <div class="muted small">${n} questões · por ${esc(ch.created_by_name||"alguém")}${endsTxt?" · "+endsTxt:""}</div>`;
+        const rr=el("div","btnrow mt");
+        const pl=el("button","btn sm","▶ Jogar"); pl.onclick=()=>startChallenge(ch); rr.appendChild(pl);
+        const board=el("div","mt hidden");
+        const bd=el("button","btn ghost sm","🏅 Placar");
+        bd.onclick=async()=>{ if(!board.classList.contains("hidden")){ board.classList.add("hidden"); return; }
+          board.classList.remove("hidden"); board.innerHTML=`<div class="muted small">...</div>`;
+          const rows=await challengeBoard(ch.id); board.innerHTML="";
+          if(!rows||!rows.length){ board.innerHTML=`<div class="muted small">Ninguém jogou ainda.</div>`; return; }
+          rows.forEach((r,i)=>{ const line=el("div","small"); line.textContent=`${i+1}º  ${r.name||"Jogador"} — ${r.correct}/${r.total}`; if(r.player_id===S.profile.id) line.style.color="var(--accent)"; board.appendChild(line); }); };
+        rr.appendChild(bd); it.appendChild(rr); it.appendChild(board);
+        clist.appendChild(it);
+      });
+    });
+  }
 
   // ---- Duelo ----
   const duel=el("div","card mt");
@@ -1712,6 +1765,59 @@ async function muralPost(text, topic){
     return res.ok;
   }catch(e){ return false; }
 }
+// ---- Desafio da turma (challenges) ----
+function chId(){ return "c"+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36); }
+async function challengesFetch(){
+  if(!supaOn()) return null;
+  try{
+    const nowIso=new Date().toISOString();
+    const url=CFG.SUPABASE_URL+"/rest/v1/challenges?turma=eq."+encodeURIComponent(S.profile.turma)+"&or=(ends_at.gt."+nowIso+",ends_at.is.null)&select=*&order=created_at.desc&limit=20";
+    const res=await fetch(url,{headers:supaHeaders()}); return res.ok? await res.json():null;
+  }catch(e){ return null; }
+}
+async function challengeCreate(title, disc, n){
+  if(!supaOn()){ toast("Nuvem não configurada."); return; }
+  let pool=QUESTIONS.slice(); if(disc&&disc!=="all") pool=pool.filter(q=>q.discipline===disc);
+  if(pool.length<3){ toast("Poucas questões para essa matéria."); return; }
+  const ids=shuffle(pool).slice(0,Math.min(n||10,pool.length)).map(q=>q.id);
+  const body=[{ id:chId(), turma:S.profile.turma, title:(title||"Desafio da turma").slice(0,80),
+    question_ids:JSON.stringify(ids), created_by:S.profile.id, created_by_name:S.profile.name||"Alguém",
+    ends_at:new Date(Date.now()+7*864e5).toISOString() }];
+  try{
+    const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/challenges",{method:"POST",headers:supaHeaders(),body:JSON.stringify(body)});
+    if(res.ok){ toast("Desafio criado! 🏆"); render(); } else toast("Falha ao criar ("+res.status+"). Rodou o SQL do desafio?");
+  }catch(e){ toast("Sem conexão."); }
+}
+async function challengeBoard(cid){
+  try{ const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/challenge_scores?challenge_id=eq."+encodeURIComponent(cid)+"&select=name,correct,total,player_id&order=correct.desc,created_at.asc&limit=60",{headers:supaHeaders()}); return res.ok?await res.json():null; }catch(e){ return null; }
+}
+async function challengeSubmit(cid, correct, total){
+  try{ await fetch(CFG.SUPABASE_URL+"/rest/v1/challenge_scores",{method:"POST",headers:supaHeaders({Prefer:"resolution=merge-duplicates"}),body:JSON.stringify([{challenge_id:cid,player_id:S.profile.id,name:S.profile.name||"Jogador",correct,total}])}); }catch(e){}
+}
+function startChallenge(ch){
+  let ids=[]; try{ ids=JSON.parse(ch.question_ids); }catch(e){}
+  const pool=ids.map(id=>QUESTIONS.find(q=>q.id===id)).filter(Boolean);
+  if(!pool.length){ toast("As questões do desafio não foram encontradas."); return; }
+  quiz={pool, idx:0, correctCount:0, answered:false, mode:"exam", source:"challenge", exam:true,
+    total:pool.length, answers:new Array(pool.length).fill(null), scored:false, endAt:null, challenge:ch};
+  go("quiz");
+}
+function challengeCreateModal(){
+  const bg=el("div","modal-bg"); const mo=el("div","modal"); mo.style.textAlign="left";
+  mo.innerHTML=`<h3 style="text-align:center">🏆 Criar desafio</h3>`;
+  mo.appendChild(el("div","small muted","Título:"));
+  const ti=el("input","input"); ti.placeholder="Ex.: Desafio de Imunologia"; mo.appendChild(ti);
+  mo.appendChild(el("div","small muted mt","Matéria:"));
+  const sel=el("select","input"); const oAll=document.createElement("option"); oAll.value=""; oAll.textContent="Todas as matérias"; sel.appendChild(oAll);
+  for(const d in DISCIPLINES){ const o=document.createElement("option"); o.value=d; o.textContent=DISCIPLINES[d].name; sel.appendChild(o); }
+  mo.appendChild(sel);
+  mo.appendChild(el("div","small muted mt","Nº de questões:"));
+  const ni=el("input","input"); ni.type="number"; ni.min=3; ni.max=20; ni.value=10; mo.appendChild(ni);
+  const cr=el("button","btn block mt","Criar desafio"); cr.onclick=async()=>{ cr.disabled=true; await challengeCreate(ti.value, sel.value||"all", parseInt(ni.value)||10); bg.remove(); };
+  const cl=el("button","btn ghost block mt","Cancelar"); cl.onclick=()=>bg.remove();
+  mo.append(cr,cl); bg.appendChild(mo); bg.onclick=e=>{if(e.target===bg)bg.remove();}; document.body.appendChild(bg);
+}
+
 // ---- Push (notificação com app fechado) ----
 function urlB64ToUint8(base64){
   const pad="=".repeat((4-base64.length%4)%4);
