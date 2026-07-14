@@ -407,6 +407,7 @@ let route="home";
 let quiz=null;   // {pool, idx, correctCount, mode}
 let flash=null;  // {pool, idx, flipped}
 let imgd=null;   // {pool, idx, revealed, filter}
+let classImgs=null; // imagens reais enviadas pela turma (Supabase Storage)
 
 function render(){
   ensureMissions();
@@ -1201,12 +1202,21 @@ function viewFlash(m){
 }
 
 /* ---------- MÓDULO DE IMAGENS ---------- */
-function imgAreas(){ const s=new Set(IMAGES.map(c=>c.area.replace(/\s*\(.*\)/,"").trim())); return [...s]; }
+function imgAreas(){ const s=new Set(allImageCards().map(c=>(c.area||"").replace(/\s*\(.*\)/,"").trim()).filter(Boolean)); return [...s]; }
 function viewImages(m){
   const head=el("div","card");
   head.innerHTML=`<h3>🖼️ Imagens — reconhecimento visual</h3>
     <p class="muted small">Bata o olho nos <b>achados</b> e diga o diagnóstico antes de revelar. Estilo prova prática de patologia e radiologia.</p>`;
   m.appendChild(head);
+
+  // carrega imagens reais da turma (uma vez)
+  if(supaOn() && classImgs===null){ classImgs=[]; classImagesFetch().then(rows=>{ classImgs=rows||[]; imgd=null; render(); }); }
+
+  // botão adicionar imagem real
+  if(supaOn()){
+    const add=el("button","btn sm mt","➕ Adicionar imagem real (da turma)"); add.onclick=addImageModal; m.appendChild(add);
+    const cnt=(classImgs||[]).length; m.appendChild(el("div","small muted mt",cnt?`${cnt} imagem(ns) real(is) da turma no banco.`:"Ainda sem imagens reais — seja o primeiro a enviar uma foto de lâmina/exame!"));
+  }
 
   // filtros por área
   const areas=["Todas", ...imgAreas()];
@@ -1230,12 +1240,14 @@ function viewImages(m){
   wrap.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
     <span class="pill">${d.icon} ${esc(card.area)}</span><span class="muted small">${imgd.idx+1}/${imgd.pool.length}</span></div>`;
 
-  // palco visual: imagem do usuário (src) > esquema svg > ícone neutro
+  // palco visual: imagem real (src) > esquema svg > ícone neutro
   const stage=el("div","imgstage mt");
-  if(card.src){ stage.innerHTML=`<img src="${esc(card.src)}" alt="imagem">`; }
+  const phHtml=`<div class="imgph">${card.area.includes("Radio")?"🩻":card.area.includes("Semio")?"🩺":"🔬"}<span>achado descrito abaixo</span></div>`;
+  if(card.src){ const im=document.createElement("img"); im.src=card.src; im.alt="imagem"; im.onerror=()=>{ stage.innerHTML=phHtml; }; stage.appendChild(im); }
   else if(card.svg){ stage.innerHTML=card.svg; }
-  else { stage.innerHTML=`<div class="imgph">${card.area.includes("Radio")?"🩻":card.area.includes("Semio")?"🩺":"🔬"}<span>achado descrito abaixo</span></div>`; }
+  else { stage.innerHTML=phHtml; }
   wrap.appendChild(stage);
+  if(card.byName) wrap.appendChild(el("div","small muted mt",`📷 enviada por ${esc(card.byName)}`));
 
   wrap.appendChild(el("div","findings mt",`<b>Achados:</b> ${esc(card.findings)}`));
 
@@ -1262,7 +1274,8 @@ function viewImages(m){
   m.appendChild(el("div","center muted small mt","Quer usar suas próprias imagens? Veja COMO-ADICIONAR-QUESTOES.md (campo \"src\")."));
 }
 function imgPool(area){
-  let p = area==="Todas" ? IMAGES.slice() : IMAGES.filter(c=>c.area.replace(/\s*\(.*\)/,"").trim()===area);
+  const all=allImageCards();
+  let p = area==="Todas" ? all.slice() : all.filter(c=>c.area.replace(/\s*\(.*\)/,"").trim()===area);
   return shuffle(p);
 }
 
@@ -2016,6 +2029,50 @@ async function reportQuestion(qid){
   try{ const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/reports",{method:"POST",headers:supaHeaders(),body:JSON.stringify([{question_id:qid, reason:String(reason).slice(0,400), name:S.profile.name||"", turma:S.profile.turma}])});
     toast(res.ok?"Reportado, obrigado! 🙏":"Falha ao reportar (rodou o SQL de reports?)."); }catch(e){ toast("Sem conexão."); }
 }
+// ---- Banco de imagens da turma (Supabase Storage) ----
+function publicImgUrl(path){ return CFG.SUPABASE_URL+"/storage/v1/object/public/medimg/"+path; }
+function classToCard(row){ return { discipline: row.discipline||"pratica", area: row.area||"Histologia",
+  findings: row.findings||"(sem descrição)", answer: row.answer||"?", explanation: row.explanation||"", src: publicImgUrl(row.path), byName: row.name }; }
+async function classImagesFetch(){
+  if(!supaOn()) return null;
+  try{ const r=await fetch(CFG.SUPABASE_URL+"/rest/v1/class_images?turma=eq."+encodeURIComponent(S.profile.turma)+"&select=*&order=id.desc&limit=300",{headers:supaHeaders()}); return r.ok? await r.json():null; }catch(e){ return null; }
+}
+async function uploadClassImage(file, meta){
+  if(!supaOn()) return false;
+  const ext=((file.name||"img.jpg").split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+  const path=Date.now()+"_"+Math.floor(Math.random()*1e6)+"."+ext;
+  try{
+    const up=await fetch(CFG.SUPABASE_URL+"/storage/v1/object/medimg/"+path,{method:"POST",
+      headers:{apikey:CFG.SUPABASE_ANON_KEY, Authorization:"Bearer "+CFG.SUPABASE_ANON_KEY, "Content-Type":file.type||"image/jpeg", "x-upsert":"true"}, body:file});
+    if(!up.ok){ toast("Falha no upload ("+up.status+"). Criou o bucket 'medimg' (público)?"); return false; }
+    const ins=await fetch(CFG.SUPABASE_URL+"/rest/v1/class_images",{method:"POST",headers:supaHeaders(),
+      body:JSON.stringify([Object.assign({turma:S.profile.turma, name:S.profile.name||"", path}, meta)])});
+    if(!ins.ok){ toast("Imagem enviada, mas falhou salvar os dados ("+ins.status+")."); return false; }
+    return true;
+  }catch(e){ toast("Sem conexão."); return false; }
+}
+function addImageModal(){
+  if(!supaOn()){ toast("Adicionar imagem precisa da nuvem."); return; }
+  const bg=el("div","modal-bg"); const mo=el("div","modal"); mo.style.textAlign="left"; mo.style.maxHeight="90vh"; mo.style.overflow="auto";
+  mo.innerHTML=`<h3 style="text-align:center">➕ Adicionar imagem real</h3><p class="muted small">Envie uma foto de lâmina/exame. Ela vira um card de reconhecimento para a turma.</p>`;
+  const fi=el("input","input mt"); fi.type="file"; fi.accept="image/*"; mo.appendChild(fi);
+  mo.appendChild(el("div","small muted mt","Área:"));
+  const area=el("select","input"); ["Histologia","Radiologia","Semiologia","Macroscopia"].forEach(a=>{const o=document.createElement("option");o.value=a;o.textContent=a;area.appendChild(o);}); mo.appendChild(area);
+  mo.appendChild(el("div","small muted mt","Matéria:"));
+  const dsel=el("select","input"); for(const dd in DISCIPLINES){const o=document.createElement("option");o.value=dd;o.textContent=DISCIPLINES[dd].name;dsel.appendChild(o);} dsel.value="pratica"; mo.appendChild(dsel);
+  const findings=el("textarea","input mt"); findings.placeholder="Achados (o que se vê na imagem)"; mo.appendChild(findings);
+  const answer=el("input","input mt"); answer.placeholder="Diagnóstico (resposta)"; mo.appendChild(answer);
+  const expl=el("textarea","input mt"); expl.placeholder="Explicação (opcional)"; mo.appendChild(expl);
+  const sv=el("button","btn block mt","📤 Enviar");
+  sv.onclick=async()=>{ if(!fi.files||!fi.files[0]){ toast("Escolha uma imagem."); return; } if(!answer.value.trim()){ toast("Escreva o diagnóstico."); return; }
+    sv.disabled=true; sv.textContent="Enviando...";
+    const ok=await uploadClassImage(fi.files[0], {area:area.value, discipline:dsel.value, findings:findings.value, answer:answer.value, explanation:expl.value});
+    sv.disabled=false; sv.textContent="📤 Enviar";
+    if(ok){ toast("Imagem enviada! 🎉"); classImgs=null; bg.remove(); imgd=null; go("images"); } };
+  const cl=el("button","btn ghost block mt","Cancelar"); cl.onclick=()=>bg.remove();
+  mo.append(sv,cl); bg.appendChild(mo); bg.onclick=e=>{if(e.target===bg)bg.remove();}; document.body.appendChild(bg);
+}
+function allImageCards(){ return IMAGES.concat((classImgs||[]).map(classToCard)); }
 // ---- Desafio da turma (challenges) ----
 function chId(){ return "c"+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36); }
 async function challengesFetch(){
