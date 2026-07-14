@@ -59,6 +59,7 @@ const SYLLABUS = {
     { phase:"N2", topic:"Febre reumática" },
   ],
   pratica: [
+    { phase:"N1", topic:"Cavidade oral e glândulas salivares" },
     { phase:"N1", topic:"Patologia do esôfago" },
     { phase:"N1", topic:"Patologia gástrica" },
     { phase:"N1", topic:"Adenocarcinoma gástrico" },
@@ -78,6 +79,9 @@ const SYLLABUS = {
     { phase:"N2", topic:"Carcinoma de tireoide" },
     { phase:"N2", topic:"Patologia das suprarrenais" },
     { phase:"N2", topic:"Feocromocitoma" },
+    { phase:"N2", topic:"Hipófise e paratireoides" },
+    { phase:"N2", topic:"Patologia do SNC" },
+    { phase:"N2", topic:"Semiologia neurológica" },
     { phase:"N2", topic:"AVC — patologia" },
     { phase:"N2", topic:"Semiologia — ascite" },
     { phase:"N2", topic:"Semiologia — hipertireoidismo" },
@@ -141,6 +145,32 @@ const SYLLABUS = {
    Ex.: "mad::Sepse": "Definição...\n- item\n- item".
    ================================================================= */
 const SUMMARIES = {
+  "pratica::Cavidade oral e glândulas salivares":
+    "PATOLOGIA DA CAVIDADE ORAL E GLÂNDULAS SALIVARES\n"+
+    "• Candidíase pseudomembranosa (Candida albicans): placas brancas que SAEM à raspagem, base eritematosa. Sinaliza imunossupressão/disbiose; em AIDS progride para esôfago. Cora por PAS/Grocott.\n"+
+    "• Paracoccidioidomicose (Paracoccidioides brasiliensis): lesão em 'amora' (moriforme, micro-hemorragias); inalação, homens de área rural. SIMULA câncer bucal → biopsiar. Fungo em 'roda de leme'.\n"+
+    "• Câncer de boca: carcinoma epidermoide; fatores tabaco + álcool; lesões que não cicatrizam.\n"+
+    "• Glândulas salivares: adenoma pleomórfico (tumor misto BENIGNO) é o mais comum, na parótida — nódulo lento, indolor, móvel. Maligno mais comum = carcinoma mucoepidermoide.",
+  "pratica::Hipófise e paratireoides":
+    "HIPÓFISE E PARATIREOIDES\n"+
+    "• Adeno-hipófise (GH, PRL, ACTH, TSH, FSH/LH) × neuro-hipófise (ADH, ocitocina).\n"+
+    "• Prolactinoma: adenoma funcionante mais comum → galactorreia/amenorreia; efeito de massa comprime o quiasma → hemianopsia bitemporal.\n"+
+    "• Acromegalia (GH no adulto): mãos/pés/mandíbula; GH anti-insulina → diabetes; Dx por IGF-1.\n"+
+    "• Hipopituitarismo — Síndrome de Sheehan: necrose isquêmica pós-parto (agalactia + amenorreia). Síndrome da sela vazia e apoplexia hipofisária também cursam com hipopituitarismo.\n"+
+    "• Diabetes insipidus: deficiência de ADH → poliúria com urina diluída (≠ SIADH).\n"+
+    "• Hiperparatireoidismo primário (adenoma): Ca ALTO + PTH ALTO — 'cálculos, ossos, abdome e transtornos psíquicos'. Na malignidade o PTH é BAIXO.",
+  "pratica::Patologia do SNC":
+    "PATOLOGIA DO SNC — DOENÇA CEREBROVASCULAR\n"+
+    "• AVE isquêmico (~85%): tromboembólico/lacunar/hemodinâmico → falência energética, edema citotóxico, ↑Ca e morte neuronal. Necrose LIQUEFATIVA (vira cavidade cística).\n"+
+    "• AVE hemorrágico (~15%): ruptura vascular (HAS) → hematoma comprime, ↑PIC, reduz perfusão.\n"+
+    "• Encéfalo depende de fluxo contínuo de O2 e glicose (pouca reserva) → dano rápido.\n"+
+    "• Clínica conforme a área: déficit motor/sensitivo, alteração de fala, visual e de coordenação.",
+  "pratica::Semiologia neurológica":
+    "SEMIOLOGIA DO SISTEMA NERVOSO\n"+
+    "• Consciência: NÍVEL (alerta — SARA/tronco; cai em lesão difusa/metabólica) × CONTEÚDO (cognição — córtex).\n"+
+    "• Fala/linguagem: disfonia (voz/laringe) × disartria (articulação por falha motora) × afasia (linguagem, lesão cortical: Broca expressiva / Wernicke compreensiva) × afonia (ausência de voz).\n"+
+    "• Localização começa na anamnese: modo de início — súbito → vascular (AVC); progressivo → tumoral/degenerativo; subagudo → inflamatório/infeccioso.\n"+
+    "• Somar 'onde está a lesão' + 'qual o mecanismo' orienta exames e conduta.",
   "mad::Sepse":
     "SEPSE = disfunção orgânica ameaçadora à vida por resposta desregulada à infecção.\n"+
     "• Choque séptico: sepse + vasopressor p/ PAM ≥ 65 + lactato > 2 apesar de volume.\n"+
@@ -2199,10 +2229,262 @@ const QUESTIONS = [
     explanation: "Perfil '4 F' (female, forty, fat, fertile) + cólica biliar pós-gordura + cálculo com sombra acústica ao USG = COLELITÍASE. Complicações: colecistite aguda, migração do cálculo ao colédoco (COLEDOCOLITÍASE) → obstrução, icterícia, COLANGITE, e PANCREATITE AGUDA BILIAR (cálculo na ampola de Vater). Caso clássico de imagem em prática clínica.",
     tags: ["colelitíase", "pancreatite biliar", "coledocolitíase"]
   },
+
+  /* ==================== PRÁTICA CLÍNICA — aprofundamento ==================== */
+
+  /* ---- Cavidade oral e glândulas salivares ---- */
+  {
+    id: "pco01", discipline: "pratica", phase: "N1", topic: "Cavidade oral e glândulas salivares", difficulty: 2,
+    vignette: "Paciente imunossuprimido com placas esbranquiçadas na mucosa oral que se destacam à raspagem, deixando uma base eritematosa.",
+    question: "O agente e a característica correta são:",
+    options: [
+      "Streptococcus; placas que não saem à raspagem",
+      "Candida albicans; candidíase pseudomembranosa (as placas destacam à raspagem)",
+      "Vírus herpes; vesículas dolorosas",
+      "Paracoccidioides; lesão em amora",
+      "Estafilococo; abscesso"
+    ],
+    answer: 1,
+    explanation: "Placas esbranquiçadas que SAEM à raspagem, com base eritematosa, em imunossuprimido = candidíase pseudomembranosa (Candida albicans). Sinaliza disbiose/imunossupressão; em imunossupressão grave (AIDS) progride para o esôfago (disfagia). Coloração de Grocott cora o fungo. Leucoplasia verdadeira NÃO sai à raspagem.",
+    tags: ["candidíase", "Candida", "Grocott"]
+  },
+  {
+    id: "pco02", discipline: "pratica", phase: "N1", topic: "Cavidade oral e glândulas salivares", difficulty: 3,
+    vignette: "Homem de zona rural com lesão ulcerada de aspecto 'moriforme' (em amora) na mucosa oral, com pontos hemorrágicos, pouco dolorosa.",
+    question: "A principal hipótese e a armadilha diagnóstica são:",
+    options: [
+      "Aftas; sem risco",
+      "Paracoccidioidomicose (Paracoccidioides brasiliensis); lesão em amora que macroscopicamente simula câncer bucal",
+      "Herpes labial; autolimitado",
+      "Sífilis primária; cancro duro",
+      "Líquen plano; estrias de Wickham"
+    ],
+    answer: 1,
+    explanation: "Lesão em AMORA (moriforme, com pontos de micro-hemorragia) da mucosa oral, em paciente de área rural/agrícola = PARACOCCIDIOIDOMICOSE (fungo Paracoccidioides brasiliensis, inalação de esporos). A armadilha é que macroscopicamente lembra CÂNCER bucal — daí a importância da biópsia. Fungo com aspecto de 'roda de leme' na histologia.",
+    tags: ["paracoco", "amora", "biópsia"]
+  },
+  {
+    id: "pco03", discipline: "pratica", phase: "N1", topic: "Cavidade oral e glândulas salivares", difficulty: 2,
+    vignette: "Nódulo de crescimento lento, indolor e móvel na região da parótida de um adulto.",
+    question: "O tumor de glândula salivar mais provável é:",
+    options: [
+      "Carcinoma mucoepidermoide",
+      "Adenoma pleomórfico (tumor misto benigno) — o mais comum das glândulas salivares",
+      "Linfoma",
+      "Carcinoma adenoide cístico",
+      "Metástase"
+    ],
+    answer: 1,
+    explanation: "O ADENOMA PLEOMÓRFICO (tumor misto benigno) é o tumor mais comum das glândulas salivares, tipicamente na PARÓTIDA, de crescimento lento, indolor e móvel. Tem risco de recidiva se mal ressecado e raramente maligniza. O mucoepidermoide é o maligno mais comum.",
+    tags: ["adenoma pleomórfico", "parótida", "glândula salivar"]
+  },
+
+  /* ---- Hipófise e paratireoides ---- */
+  {
+    id: "phi01", discipline: "pratica", phase: "N2", topic: "Hipófise e paratireoides", difficulty: 3,
+    vignette: "Mulher que teve hemorragia grave e hipotensão no parto evolui, no puerpério, com incapacidade de amamentar (agalactia), amenorreia e fadiga.",
+    question: "O diagnóstico e o mecanismo são:",
+    options: [
+      "Prolactinoma; excesso de prolactina",
+      "Síndrome de Sheehan; necrose isquêmica da hipófise pós-parto → hipopituitarismo",
+      "Doença de Graves; hipertireoidismo",
+      "Diabetes insipidus; deficiência de ADH",
+      "Hipotireoidismo primário; falência tireoidiana"
+    ],
+    answer: 1,
+    explanation: "Agalactia + amenorreia + hipopituitarismo após hemorragia/hipotensão no parto = SÍNDROME DE SHEEHAN. A hipófise, aumentada e muito vascularizada na gestação, sofre NECROSE ISQUÊMICA na hipotensão do parto → deficiência de hormônios tróficos (prolactina, gonadotrofinas, TSH, ACTH). Causa clássica de hipopituitarismo pós-parto.",
+    tags: ["Sheehan", "hipopituitarismo", "puerpério"]
+  },
+  {
+    id: "phi02", discipline: "pratica", phase: "N2", topic: "Hipófise e paratireoides", difficulty: 3,
+    vignette: "Mulher jovem com galactorreia, amenorreia e, à campimetria, perda da visão nos campos temporais dos dois olhos (hemianopsia bitemporal).",
+    question: "A causa mais provável e o mecanismo do defeito visual são:",
+    options: [
+      "Adenoma hipofisário produtor de GH; compressão do nervo óptico",
+      "Prolactinoma; a hiperprolactinemia causa galactorreia/amenorreia e o tumor comprime o quiasma óptico (hemianopsia bitemporal)",
+      "Craniofaringioma; excesso de ACTH",
+      "Doença de Cushing; efeito do cortisol",
+      "Meningioma; hipertensão intracraniana isolada"
+    ],
+    answer: 1,
+    explanation: "Galactorreia + amenorreia = hiperprolactinemia (PROLACTINOMA, o adenoma hipofisário funcionante mais comum). O EFEITO DE MASSA comprime o QUIASMA ÓPTICO (fibras nasais cruzadas) → HEMIANOPSIA BITEMPORAL (perde os campos temporais). Tratamento com agonista dopaminérgico (cabergolina) costuma reduzir o tumor.",
+    tags: ["prolactinoma", "quiasma", "hemianopsia bitemporal"]
+  },
+  {
+    id: "phi03", discipline: "pratica", phase: "N2", topic: "Hipófise e paratireoides", difficulty: 2,
+    vignette: "Homem de 45 anos com aumento de mãos, pés e mandíbula (prognatismo), separação dos dentes, sudorese e intolerância à glicose.",
+    question: "O diagnóstico e a causa são:",
+    options: [
+      "Gigantismo; excesso de GH antes do fechamento das epífises",
+      "Acromegalia; adenoma hipofisário produtor de GH no adulto (efeito anti-insulina → diabetes)",
+      "Hipotireoidismo; mixedema",
+      "Síndrome de Cushing; excesso de cortisol",
+      "Hiperparatireoidismo; hipercalcemia"
+    ],
+    answer: 1,
+    explanation: "Crescimento acral (mãos, pés, mandíbula) no ADULTO + alterações metabólicas = ACROMEGALIA, por adenoma hipofisário produtor de GH. Antes do fechamento das epífises (criança) causaria GIGANTISMO. O GH tem efeito ANTI-INSULINA → hiperglicemia/diabetes. Diagnóstico: IGF-1 elevado e GH não suprime na sobrecarga de glicose.",
+    tags: ["acromegalia", "GH", "IGF-1"]
+  },
+  {
+    id: "phi04", discipline: "pratica", phase: "N2", topic: "Hipófise e paratireoides", difficulty: 3,
+    vignette: "Paciente com cálculos renais de repetição, dor óssea, constipação, poliúria e alterações do humor. Cálcio sérico elevado, fósforo baixo e PTH elevado.",
+    question: "O diagnóstico e a causa mais comum são:",
+    options: [
+      "Hipoparatireoidismo; hipocalcemia",
+      "Hiperparatireoidismo primário; adenoma de paratireoide (hipercalcemia com PTH alto)",
+      "Deficiência de vitamina D; hipocalcemia",
+      "Metástase óssea; hipercalcemia com PTH baixo",
+      "Doença de Paget; fosfatase alcalina isolada"
+    ],
+    answer: 1,
+    explanation: "Hipercalcemia + PTH ELEVADO = HIPERPARATIREOIDISMO PRIMÁRIO, na maioria por ADENOMA de paratireoide. Clínica mnemônica: 'cálculos (renais), ossos (dor/reabsorção), abdome (constipação, úlcera, pancreatite) e transtornos psíquicos'. Na hipercalcemia da malignidade, o PTH está BAIXO (suprimido).",
+    tags: ["hiperparatireoidismo", "PTH", "hipercalcemia"]
+  },
+  {
+    id: "phi05", discipline: "pratica", phase: "N2", topic: "Hipófise e paratireoides", difficulty: 2,
+    vignette: "Após trauma cranioencefálico, paciente apresenta poliúria intensa (vários litros/dia) com urina muito diluída e sede intensa; glicemia normal.",
+    question: "O diagnóstico e o hormônio envolvido são:",
+    options: [
+      "Diabetes mellitus; insulina",
+      "Diabetes insipidus central; deficiência de ADH (hormônio antidiurético) da neuro-hipófise",
+      "Hiperaldosteronismo; aldosterona",
+      "SIADH; excesso de ADH",
+      "Insuficiência renal; ureia"
+    ],
+    answer: 1,
+    explanation: "Poliúria com urina DILUÍDA (baixa densidade) + polidipsia, com glicemia normal, após lesão hipotálamo-hipofisária = DIABETES INSIPIDUS CENTRAL, por deficiência de ADH (produzido no hipotálamo e liberado pela neuro-hipófise). Sem ADH, o rim não concentra a urina. É o oposto da SIADH (ADH em excesso → hiponatremia).",
+    tags: ["diabetes insipidus", "ADH", "neuro-hipófise"]
+  },
+
+  /* ---- Patologia e semiologia do SNC ---- */
+  {
+    id: "psnc01", discipline: "pratica", phase: "N2", topic: "Patologia do SNC", difficulty: 3,
+    vignette: "Estudo da lesão tecidual no AVC isquêmico.",
+    question: "Qual a sequência fisiopatológica e o tipo de necrose no infarto cerebral?",
+    options: [
+      "Necrose caseosa por hipersensibilidade",
+      "Falência energética → falha das bombas de membrana → edema citotóxico e influxo de cálcio → morte neuronal, com necrose LIQUEFATIVA",
+      "Necrose coagulativa, como no infarto do miocárdio",
+      "Apoptose isolada sem edema",
+      "Necrose gordurosa"
+    ],
+    answer: 1,
+    explanation: "No AVC isquêmico, a interrupção do fluxo causa FALÊNCIA ENERGÉTICA → param as bombas Na/K → edema CITOTÓXICO, influxo de cálcio e morte neuronal. O encéfalo sofre necrose LIQUEFATIVA (diferente da coagulativa dos outros órgãos), formando uma cavidade cística com o tempo. Isquêmicos são ~85% dos AVCs.",
+    tags: ["AVC isquêmico", "necrose liquefativa", "edema citotóxico"]
+  },
+  {
+    id: "psnc02", discipline: "pratica", phase: "N2", topic: "Semiologia neurológica", difficulty: 2,
+    vignette: "Discussão sobre a avaliação da consciência no exame neurológico.",
+    question: "Sobre NÍVEL e CONTEÚDO da consciência, assinale a correta:",
+    options: [
+      "Ambos dependem exclusivamente do córtex",
+      "O NÍVEL (grau de alerta) depende do tronco encefálico/SARA e de lesões difusas; o CONTEÚDO (cognição: memória, linguagem) depende do córtex",
+      "Nível é cognição e conteúdo é alerta",
+      "Consciência não pode ser avaliada clinicamente",
+      "Alteração do nível indica sempre lesão focal cortical"
+    ],
+    answer: 1,
+    explanation: "NÍVEL de consciência = grau de alerta, mantido pelo sistema reticular ativador ascendente (tronco) — rebaixa em lesões do tronco ou DIFUSAS (metabólicas, hipóxia). CONTEÚDO = funções cognitivas (memória, linguagem, crítica), do CÓRTEX — alterações apontam disfunção cortical. Distinguir os dois localiza a lesão.",
+    tags: ["consciência", "SARA", "córtex"]
+  },
+  {
+    id: "psnc03", discipline: "pratica", phase: "N2", topic: "Semiologia neurológica", difficulty: 2,
+    vignette: "Paciente com dificuldade de comunicação. Precisa-se distinguir os tipos de alteração da fala/linguagem.",
+    question: "Qual associação está CORRETA?",
+    options: [
+      "Disfonia — falha do controle motor da articulação",
+      "Disartria — alteração da ARTICULAÇÃO por falha motora (central, periférica ou cerebelar); afasia — distúrbio da LINGUAGEM (cortical); disfonia — alteração da voz (laringe)",
+      "Afasia — problema apenas de audição",
+      "Disartria — perda de vocabulário",
+      "Afasia e disartria são sinônimos"
+    ],
+    answer: 1,
+    explanation: "DISFONIA = alteração da VOZ (fonação, laringe). DISARTRIA = alteração da ARTICULAÇÃO por falha no controle motor dos músculos da fala (lesão central, periférica ou cerebelar) — a linguagem está preservada. AFASIA = distúrbio da LINGUAGEM (compreensão/expressão), por lesão CORTICAL (ex.: Broca, Wernicke). Localizam níveis diferentes.",
+    tags: ["afasia", "disartria", "disfonia"]
+  },
+  {
+    id: "psnc04", discipline: "pratica", phase: "N2", topic: "Semiologia neurológica", difficulty: 2,
+    vignette: "Na anamnese neurológica, o MODO DE INÍCIO dos sintomas ajuda a localizar/definir a etiologia.",
+    question: "Qual associação início × causa é a mais adequada?",
+    options: [
+      "Súbito → tumor; progressivo → AVC",
+      "Súbito → vascular (AVC); progressivo/lento → tumoral/degenerativo; subagudo → inflamatório/infeccioso",
+      "Todo início súbito é psicogênico",
+      "Início não tem valor diagnóstico",
+      "Subagudo → sempre vascular"
+    ],
+    answer: 1,
+    explanation: "O tempo de instalação orienta a etiologia: SÚBITO (segundos-minutos) → VASCULAR (AVC); PROGRESSIVO/lento (semanas-meses) → TUMORAL ou DEGENERATIVO; SUBAGUDO (dias) → INFLAMATÓRIO/INFECCIOSO. Junto com a localização da lesão, é o eixo do raciocínio neurológico.",
+    tags: ["anamnese neurológica", "início", "etiologia"]
+  },
+
+  /* ---- Vesícula e vias biliares (aprofundamento) ---- */
+  {
+    id: "pvb01", discipline: "pratica", phase: "N2", topic: "Vesícula e vias biliares", difficulty: 3,
+    vignette: "Comparação dos tipos de cálculo biliar.",
+    question: "Qual associação tipo de cálculo × contexto está CORRETA?",
+    options: [
+      "Cálculo pigmentado — bile supersaturada de colesterol, típico de obesidade",
+      "Cálculo de colesterol — bile supersaturada de colesterol (mulheres, obesidade); cálculo pigmentado (bilirrubinato de cálcio) — associado a hemólise crônica",
+      "Cálculo misto — composto só de cálcio",
+      "Cálculo de colesterol — sempre por infecção bacteriana",
+      "Cálculo pigmentado — rico em colesterol (>90%)"
+    ],
+    answer: 1,
+    explanation: "Cálculos de COLESTEROL (amarelados) formam-se quando a bile fica SUPERSATURADA de colesterol (mulheres, obesidade, '4F'). Cálculos PIGMENTADOS (escuros, de bilirrubinato de cálcio) associam-se ao aumento de bilirrubina não conjugada, como nas ANEMIAS HEMOLÍTICAS crônicas. Os MISTOS são os mais comuns.",
+    tags: ["cálculo biliar", "colesterol", "pigmentado"]
+  },
+  {
+    id: "pvb02", discipline: "pratica", phase: "N2", topic: "Vesícula e vias biliares", difficulty: 2,
+    vignette: "Achado incidental à colecistectomia: mucosa da vesícula com pequenos pontos amarelados, aspecto de 'vesícula em morango'. Histologia: macrófagos xantomatosos (repletos de colesterol) na lâmina própria.",
+    question: "O diagnóstico é:",
+    options: [
+      "Adenocarcinoma da vesícula",
+      "Colesterolose (acúmulo de macrófagos com colesterol na submucosa); geralmente assintomática",
+      "Colecistite crônica",
+      "Vesícula em porcelana",
+      "Pólipo adenomatoso"
+    ],
+    answer: 1,
+    explanation: "Mucosa em 'MORANGO' + macrófagos xantomatosos (carregados de colesterol) na lâmina própria = COLESTEROLOSE, por bile supersaturada de colesterol. Costuma ser assintomática e benigna; quando há cálculos associados, tendem a ser de colesterol. Não confundir com a 'vesícula em porcelana' (calcificação, risco de câncer).",
+    tags: ["colesterolose", "vesícula em morango", "macrófagos"]
+  },
+  {
+    id: "pvb03", discipline: "pratica", phase: "N2", topic: "Vesícula e vias biliares", difficulty: 2,
+    vignette: "Mulher com dor no hipocôndrio direito, febre e náuseas. Ao exame, a palpação profunda do HCD durante a inspiração interrompe a respiração por dor (parada inspiratória).",
+    question: "O sinal descrito e o diagnóstico são:",
+    options: [
+      "Sinal de Blumberg; apendicite",
+      "Sinal de Murphy; colecistite aguda (obstrução do ducto cístico por cálculo)",
+      "Sinal de Courvoisier; câncer de pâncreas",
+      "Sinal de Giordano; pielonefrite",
+      "Sinal de Rovsing; diverticulite"
+    ],
+    answer: 1,
+    explanation: "Parada inspiratória à palpação do HCD = sinal de MURPHY positivo = COLECISTITE AGUDA, geralmente por cálculo impactado no ducto cístico (obstrução → inflamação da parede). Distingue-se da cólica biliar simples (sem febre/inflamação). USG confirma (parede espessada, líquido perivesicular).",
+    tags: ["Murphy", "colecistite", "ducto cístico"]
+  },
 ];
 
 /* ============================ FLASHCARDS ============================ */
 const FLASHCARDS = [
+  /* Prática Clínica — aprofundamento */
+  { id: "f-pco01", discipline: "pratica", phase: "N1", front: "Candidíase pseudomembranosa: agente e sinal-chave", back: "Candida albicans. Placas brancas que SAEM à raspagem deixando base eritematosa. Marca imunossupressão/disbiose; em AIDS progride para esôfago. Cora pelo Grocott/PAS." },
+  { id: "f-pco02", discipline: "pratica", phase: "N1", front: "Paracoccidioidomicose oral: aspecto e armadilha", back: "Lesão em 'amora' (moriforme, com micro-hemorragias) por Paracoccidioides brasiliensis (inalação, área rural). Simula câncer bucal → sempre biopsiar. Fungo em 'roda de leme'." },
+  { id: "f-pco03", discipline: "pratica", phase: "N1", front: "Tumor de glândula salivar mais comum", back: "Adenoma pleomórfico (tumor misto benigno), quase sempre na parótida: nódulo lento, indolor e móvel. Maligno mais comum = carcinoma mucoepidermoide." },
+  { id: "f-phi01", discipline: "pratica", phase: "N2", front: "Síndrome de Sheehan", back: "Hipopituitarismo por necrose isquêmica da hipófise após hemorragia/hipotensão no PARTO. Clássico: agalactia + amenorreia no puerpério + queda dos demais eixos." },
+  { id: "f-phi02", discipline: "pratica", phase: "N2", front: "Prolactinoma: clínica e efeito de massa", back: "Adenoma funcionante mais comum. Hiperprolactinemia → galactorreia + amenorreia. Comprime o quiasma → hemianopsia bitemporal. Tratamento: cabergolina (agonista dopaminérgico)." },
+  { id: "f-phi03", discipline: "pratica", phase: "N2", front: "Acromegalia × gigantismo", back: "Excesso de GH (adenoma). Adulto (epífises fechadas) = acromegalia (mãos, pés, mandíbula). Criança = gigantismo. GH é anti-insulina → diabetes. Dx: IGF-1 alto." },
+  { id: "f-phi04", discipline: "pratica", phase: "N2", front: "Hiperparatireoidismo primário", back: "Adenoma de paratireoide → cálcio ALTO com PTH ALTO, fósforo baixo. 'Cálculos, ossos, abdome e transtornos psíquicos'. Na malignidade o PTH está BAIXO." },
+  { id: "f-phi05", discipline: "pratica", phase: "N2", front: "Diabetes insipidus central", back: "Deficiência de ADH (neuro-hipófise). Poliúria com urina DILUÍDA + polidipsia, glicemia normal. Oposto da SIADH (ADH em excesso → hiponatremia)." },
+  { id: "f-psnc01", discipline: "pratica", phase: "N2", front: "AVC isquêmico: necrose e mecanismo", back: "~85% dos AVCs. Falência energética → falha das bombas → edema citotóxico + Ca intracelular → morte neuronal. No encéfalo a necrose é LIQUEFATIVA (vira cavidade cística)." },
+  { id: "f-psnc02", discipline: "pratica", phase: "N2", front: "Nível × conteúdo da consciência", back: "Nível = alerta (SARA/tronco; cai em lesão difusa/metabólica). Conteúdo = cognição (córtex). Distinguir localiza a lesão." },
+  { id: "f-psnc03", discipline: "pratica", phase: "N2", front: "Disfonia × disartria × afasia", back: "Disfonia = voz (laringe). Disartria = articulação por falha motora (linguagem preservada). Afasia = linguagem (lesão cortical: Broca/Wernicke)." },
+  { id: "f-psnc04", discipline: "pratica", phase: "N2", front: "Modo de início e etiologia neurológica", back: "Súbito → vascular (AVC). Progressivo/lento → tumoral/degenerativo. Subagudo (dias) → inflamatório/infeccioso." },
+  { id: "f-pvb01", discipline: "pratica", phase: "N2", front: "Tipos de cálculo biliar", back: "Colesterol (amarelos, bile supersaturada, mulheres/obesidade). Pigmentados (escuros, bilirrubinato de cálcio, hemólise). Mistos = os mais comuns." },
+  { id: "f-pvb02", discipline: "pratica", phase: "N2", front: "Colesterolose ('vesícula em morango')", back: "Macrófagos xantomatosos (repletos de colesterol) na lâmina própria; mucosa com pontos amarelados. Geralmente assintomática. Não confundir com 'vesícula em porcelana' (calcificação, risco de câncer)." },
+  { id: "f-pvb03", discipline: "pratica", phase: "N2", front: "Sinal de Murphy", back: "Parada inspiratória à palpação do HCD = colecistite aguda (cálculo impactado no ducto cístico). USG: parede espessada + líquido perivesicular." },
+
   /* MAD II */
   { id: "f-mad01", discipline: "mad", phase: "N1", front: "Critérios de choque séptico (definição prática)", back: "Sepse + necessidade de vasopressor para PAM ≥ 65 mmHg + lactato > 2 mmol/L apesar de ressuscitação volêmica adequada." },
   { id: "f-mad02", discipline: "mad", phase: "N1", front: "Principais citocinas pró-inflamatórias da sepse", back: "TNF-α, IL-1 e IL-6. Induzem febre, vasodilatação (via NO), aumento de permeabilidade capilar e ativação da coagulação." },
