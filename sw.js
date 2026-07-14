@@ -1,5 +1,5 @@
 /* MedQuest 5 — Service Worker (offline + instalável) */
-const CACHE = "medquest-shell-v2";
+const CACHE = "medquest-shell-v3";
 const ASSETS = [
   "./", "./index.html", "./manifest.json",
   "./css/style.css", "./js/config.js", "./js/content.js", "./js/app.js",

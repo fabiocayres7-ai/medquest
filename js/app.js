@@ -537,6 +537,9 @@ function viewHome(m){
   }
   mg.innerHTML=mgHtml; m.appendChild(mg);
 
+  // Prontidão por tema (aparece quando há temas estudados com questões)
+  const rc=readinessCard(); if(rc) m.appendChild(rc);
+
   // Praticar
   m.appendChild(el("div","sectitle","Praticar"));
   const acts=el("div","btnrow");
@@ -941,6 +944,142 @@ function startErrorCards(){
   route="flash"; flash={pool:shuffle(cards), idx:0, flipped:false, auto:true}; render(); window.scrollTo(0,0);
 }
 
+/* ---------- Revisão dirigida + análise de alternativas ---------- */
+// Treina só um tema (ignora o travamento — é revisão do que acabou de cair)
+function drillTopic(disc, topic){
+  const pool=QUESTIONS.filter(q=>q.discipline===disc && q.topic===topic);
+  if(!pool.length){ toast("Sem questões deste tema."); return; }
+  const n=Math.min(10, pool.length);
+  quiz={pool:shuffle(pool).slice(0,n), idx:0, correctCount:0, answered:false, mode:"quiz", source:"drill", exam:false,
+    total:n, answers:new Array(n).fill(null), scored:false, endAt:null};
+  go("quiz");
+}
+// Bloco "análise das alternativas" (usa q.whys se existir)
+function whyBlock(q){
+  if(!q.whys || !q.whys.length) return null;
+  const box=el("div","explain mt");
+  let html=`<div class="small muted mb"><b>🔎 Análise das alternativas</b></div>`;
+  q.whys.forEach((w,i)=>{ if(w==null||w==="") return;
+    const ok=i===q.answer;
+    html+=`<div class="small" style="margin:5px 0"><b style="color:${ok?'var(--good)':'#e5675f'}">${ok?"✔":"✗"} ${String.fromCharCode(65+i)})</b> ${esc(w)}</div>`;
+  });
+  box.innerHTML=html; return box;
+}
+// Botão que revela a análise das alternativas
+function whyToggle(q){
+  if(!q.whys || !q.whys.length) return null;
+  const wrap=el("div","mt"); const box=whyBlock(q); box.classList.add("hidden");
+  const b=el("button","btn ghost sm","🔎 Analisar cada alternativa");
+  b.onclick=()=>box.classList.toggle("hidden");
+  wrap.append(b, box); return wrap;
+}
+// Ações de revisão dirigida: refazer o tema + abrir o resumo inline
+function reviewActions(disc, topic){
+  const wrap=el("div","mt");
+  const row=el("div","btnrow"); wrap.appendChild(row);
+  const dt=el("button","btn ghost sm","🔁 Refazer este tema"); dt.onclick=()=>drillTopic(disc,topic); row.appendChild(dt);
+  if(hasSummary(disc,topic)){
+    const box=el("div","explain mt hidden"); box.innerHTML=esc(SUMMARIES[tkey(disc,topic)]).replace(/\n/g,"<br>");
+    const rb=el("button","btn ghost sm","📖 Ver resumo do tema"); rb.onclick=()=>box.classList.toggle("hidden");
+    row.appendChild(rb); wrap.appendChild(box);
+  }
+  return wrap;
+}
+
+/* ---------- Prontidão por tema ---------- */
+// score 0–100 combinando cobertura (dominadas/total), acerto e recência
+function topicReadiness(disc, topic){
+  const qs=QUESTIONS.filter(q=>q.discipline===disc && q.topic===topic);
+  const total=qs.length; if(!total) return null;
+  let mastered=0; const lastDates=[];
+  qs.forEach(q=>{ const s=S.seenQ[q.id]; if(s){ if(s.correct) mastered++; if(s.last) lastDates.push(s.last); } });
+  const tk=tkey(disc,topic), bt=S.byTopic[tk]||{answered:0,correct:0};
+  const acc = bt.answered? bt.correct/bt.answered : 0;
+  const coverage = mastered/total;
+  const lastStr = lastDates.sort().slice(-1)[0]||null;
+  const days = lastStr!=null? daysBetween(lastStr, todayStr()) : null;
+  const fresh = days==null?0.5 : (days<=7?1 : days<=14?0.8 : days<=30?0.6 : 0.4);
+  const started = bt.answered>0;
+  const score = started ? Math.round((0.55*coverage + 0.30*acc + 0.15*fresh)*100) : 0;
+  return {disc, topic, total, mastered, answered:bt.answered, acc:Math.round(acc*100), coverage:Math.round(coverage*100), days, score, started};
+}
+// prontidão média dos temas estudados (opcionalmente de uma fase)
+function examReadiness(phase){
+  const items=[];
+  for(const disc in DISCIPLINES){
+    planTopics(disc).forEach(t=>{
+      if(phase && t.phase!==phase) return;
+      if(!t.studied || !t.qCount) return;
+      const r=topicReadiness(disc,t.topic); if(r){ r.phase=t.phase; items.push(r); }
+    });
+  }
+  const avg = items.length? Math.round(items.reduce((a,r)=>a+r.score,0)/items.length) : 0;
+  return {avg, items};
+}
+function readyColor(s){ return s>=75?"var(--good)":s>=50?"var(--warn)":"#e5675f"; }
+// card resumido para a Home
+function readinessCard(){
+  const ne=nextExam(); const phase=ne?ne.phase:null;
+  const er=examReadiness(phase);
+  if(!er.items.length) return null;
+  const card=el("div","card mt");
+  const weak=er.items.slice().sort((a,b)=>a.score-b.score).slice(0,3);
+  const col=readyColor(er.avg);
+  card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline">
+     <b>🎯 Prontidão${phase?` para a ${phase}`:""}</b><span class="muted small">${er.items.length} tema${er.items.length>1?"s":""} estudado${er.items.length>1?"s":""}</span></div>
+   <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+     <div style="font-size:30px;font-weight:800;color:${col}">${er.avg}%</div>
+     <div class="prog" style="flex:1"><span style="width:${er.avg}%;background:${col}"></span></div></div>
+   <div class="muted small mt">${er.avg>=75?"Bem preparado — mantenha as revisões em dia.":er.avg>=50?"No caminho — reforce os temas mais fracos abaixo.":"Ainda cru — priorize os temas abaixo."}</div>`;
+  const wl=el("div","mt");
+  weak.forEach(r=>{ const c2=readyColor(r.score);
+    const row=el("div","mission");
+    row.innerHTML=`<div class="info"><div class="nm small">${DISCIPLINES[r.disc].icon} ${esc(r.topic)}</div>
+        <div class="mprog"><span style="width:${r.score}%;background:${c2}"></span></div></div>
+      <div class="rw" style="color:${c2}">${r.score}%</div>`;
+    const b=el("button","btn ghost sm","Revisar"); b.onclick=()=>drillTopic(r.disc,r.topic);
+    row.appendChild(b); wl.appendChild(row);
+  });
+  card.appendChild(wl);
+  const more=el("button","btn ghost sm block mt","📊 Ver prontidão de todos os temas"); more.onclick=readinessModal;
+  card.appendChild(more);
+  return card;
+}
+// modal detalhado, agrupado por disciplina + "foco da semana"
+function readinessModal(){
+  const bg=el("div","modal-bg"); const mo=el("div","modal"); mo.style.textAlign="left"; mo.style.maxHeight="88vh"; mo.style.overflow="auto";
+  mo.innerHTML=`<h3 style="text-align:center">🎯 Prontidão por tema</h3>
+     <p class="muted small">Combina <b>cobertura</b> (questões que você já domina), <b>acerto</b> e <b>há quanto tempo</b> revisou — só dos temas marcados como estudados.</p>`;
+  const all=[];
+  for(const disc in DISCIPLINES){ planTopics(disc).forEach(t=>{ if(t.studied && t.qCount){ const r=topicReadiness(disc,t.topic); if(r){ r.phase=t.phase; all.push(r); } } }); }
+  if(!all.length){
+    mo.appendChild(el("div","card mt","Marque temas no Plano e responda algumas questões para ver sua prontidão."));
+  } else {
+    const weak=all.slice().sort((a,b)=>a.score-b.score).slice(0,3);
+    const sug=el("div","card mt"); sug.style.borderColor="var(--accent)";
+    sug.innerHTML=`<b>📌 Foco da semana</b><div class="muted small mt">Comece pelos mais fracos: ${weak.map(r=>DISCIPLINES[r.disc].icon+" "+esc(r.topic)).join(" · ")}</div>`;
+    const sb=el("button","btn sm block mt","🔁 Treinar o mais fraco agora"); sb.onclick=()=>{ bg.remove(); drillTopic(weak[0].disc, weak[0].topic); }; sug.appendChild(sb);
+    mo.appendChild(sug);
+    for(const disc in DISCIPLINES){
+      const items=all.filter(r=>r.disc===disc).sort((a,b)=>a.score-b.score);
+      if(!items.length) continue;
+      const card=el("div","card mt"); card.appendChild(el("div","",`<b>${DISCIPLINES[disc].icon} ${esc(DISCIPLINES[disc].name)}</b>`));
+      items.forEach(r=>{ const c2=readyColor(r.score);
+        const row=el("div","mission");
+        row.innerHTML=`<div class="info"><div class="nm small">${esc(r.topic)} <span class="pill">${r.phase}</span></div>
+           <div class="mprog"><span style="width:${r.score}%;background:${c2}"></span></div>
+           <div class="muted" style="font-size:11px">${r.mastered}/${r.total} dominadas · ${r.acc}% acerto · ${r.days==null?"ainda não revisado":r.days+"d atrás"}</div></div>
+          <div class="rw" style="color:${c2}">${r.score}%</div>`;
+        const b=el("button","btn ghost sm","▶"); b.onclick=()=>{ bg.remove(); drillTopic(r.disc,r.topic); };
+        row.appendChild(b); card.appendChild(row);
+      });
+      mo.appendChild(card);
+    }
+  }
+  const cl=el("button","btn ghost block mt","Fechar"); cl.onclick=()=>bg.remove(); mo.appendChild(cl);
+  bg.appendChild(mo); bg.onclick=e=>{if(e.target===bg)bg.remove();}; document.body.appendChild(bg);
+}
+
 function viewQuiz(m){
   if(quiz && !quiz.startedAt) quiz.startedAt=Date.now();
   if(!quiz){
@@ -1037,6 +1176,7 @@ function answer(i,body,opts,q){
   const ex=el("div","explain "+(correct?"ok":"no"));
   ex.innerHTML=`<span class="tag">${correct?`✔ Correto! +${gain} XP`:"✗ Incorreto"}</span>${esc(q.explanation)}`;
   body.appendChild(ex);
+  const wt=whyToggle(q); if(wt) body.appendChild(wt);
   if(quiz.daily && !dailyDone()){ const bonus=correct?50:15; addXP(bonus); S.dailyQ={date:todayStr(),done:true,correct};
     ex.innerHTML+=`<div class="mt" style="color:var(--gold);font-weight:700">🎯 Questão do dia! +${bonus} XP</div>`; }
   if(!correct){
@@ -1048,6 +1188,7 @@ function answer(i,body,opts,q){
     });
     rz.appendChild(rrow); body.appendChild(rz);
   }
+  body.appendChild(reviewActions(q.discipline, q.topic));
   const nav=el("div","btnrow mt");
   const nb=el("button","btn",quiz.idx+1>=quiz.pool.length?"Ver resultado →":"Próxima →");
   nb.onclick=()=>{ quiz.idx++; quiz.answered=false; render(); window.scrollTo(0,0); };
@@ -1151,6 +1292,8 @@ function quizResult(m){
       <div class="small"><b>Sua resposta:</b> ${sel!=null?String.fromCharCode(65+sel)+") "+esc(q.options[sel]):"(em branco)"} ${ok?"✅":"❌"}</div>
       <div class="small" style="color:var(--good)"><b>Correta:</b> ${String.fromCharCode(65+q.answer)}) ${esc(q.options[q.answer])}</div>
       <div class="explain ${ok?"ok":"no"} mt">${esc(q.explanation)}</div>`;
+    const wt=whyToggle(q); if(wt) item.appendChild(wt);
+    item.appendChild(reviewActions(q.discipline, q.topic));
     if(supaOn()){ const rb=el("button","btn ghost sm mt","⚠️ Reportar erro nesta questão"); rb.onclick=()=>reportQuestion(q.id); item.appendChild(rb); }
     m.appendChild(item);
   });

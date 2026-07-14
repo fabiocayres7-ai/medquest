@@ -2738,5 +2738,120 @@ const LINKS = {
   // "pratica::Vesícula e vias biliares": [ {label:"Aula: colelitíase", url:"https://..."} ],
 };
 
+/* ============================================================
+   WHYS — análise de cada alternativa (por que a errada está errada)
+   Mapa por id da questão → array paralelo às options.
+   Para adicionar a qualquer questão antiga, basta incluir aqui.
+   ============================================================ */
+const WHYS = {
+  pco01: [
+    "Agente errado: na candidíase as placas SAEM à raspagem (não é lesão fixa de Streptococcus).",
+    "Correta: Candida albicans; pseudomembranosa — placas destacáveis, base eritematosa; sinal de imunossupressão.",
+    "Herpes causa vesículas/úlceras dolorosas, não placas brancas removíveis.",
+    "Paracoccidioides dá lesão em 'amora' (moriforme), não placa que sai à raspagem.",
+    "Estafilococo/abscesso não corresponde ao quadro de placas removíveis."
+  ],
+  pco02: [
+    "Aftas são úlceras rasas e recorrentes, sem aspecto de amora nem risco tumoral.",
+    "Correta: paracoccidioidomicose; lesão moriforme que simula câncer bucal → biopsiar.",
+    "Herpes labial dá vesículas no lábio, autolimitado, não moriforme.",
+    "Cancro duro da sífilis é úlcera única indolor de borda endurecida, não 'amora'.",
+    "Líquen plano faz estrias brancas reticulares (Wickham), não lesão hemorrágica em amora."
+  ],
+  pco03: [
+    "Mucoepidermoide é o MALIGNO mais comum, não o tumor mais comum no geral.",
+    "Correta: adenoma pleomórfico (tumor misto benigno) — o mais comum, típico da parótida.",
+    "Linfoma é incomum e não corresponde ao nódulo parotídeo benigno clássico.",
+    "Adenoide cístico é maligno (invasão perineural, dor), não o mais comum.",
+    "Metástase é apresentação incomum para um nódulo primário benigno da parótida."
+  ],
+  phi01: [
+    "Prolactinoma causaria galactorreia por EXCESSO, não agalactia, e não se liga à hemorragia do parto.",
+    "Correta: síndrome de Sheehan — necrose isquêmica da hipófise pós-parto → hipopituitarismo.",
+    "Graves é hipertireoidismo (bócio, exoftalmia), não hipopituitarismo.",
+    "Diabetes insipidus dá poliúria, não agalactia/amenorreia.",
+    "Hipotireoidismo primário não explica agalactia pós-hemorragia nem o pan-hipopituitarismo."
+  ],
+  phi02: [
+    "Excesso de GH daria acromegalia, não galactorreia; e o defeito é por compressão do quiasma, não do nervo óptico isolado.",
+    "Correta: prolactinoma — hiperprolactinemia + compressão do quiasma (hemianopsia bitemporal).",
+    "Craniofaringioma não secreta ACTH; o quadro é de prolactina.",
+    "Cushing dá fácies em lua, estrias e obesidade central, não galactorreia.",
+    "Meningioma não explica galactorreia/amenorreia."
+  ],
+  phi03: [
+    "Gigantismo ocorreria ANTES do fechamento das epífises (criança/adolescente).",
+    "Correta: acromegalia — excesso de GH no adulto (adenoma), com efeito anti-insulina.",
+    "Hipotireoidismo dá mixedema (edema), não crescimento acral nem separação dos dentes.",
+    "Cushing não causa crescimento de mãos, pés e mandíbula.",
+    "Hiperparatireoidismo cursa com hipercalcemia, não com acromegalia."
+  ],
+  phi04: [
+    "Hipoparatireoidismo dá HIPOcalcemia (tetania) — o oposto do quadro.",
+    "Correta: hiperparatireoidismo primário (adenoma) — Ca alto + PTH alto.",
+    "Deficiência de vitamina D cursa com cálcio BAIXO (PTH secundariamente alto); aqui o cálcio está alto.",
+    "Na hipercalcemia da malignidade o PTH está BAIXO (suprimido), não elevado.",
+    "Paget altera a fosfatase alcalina, com cálcio geralmente normal."
+  ],
+  phi05: [
+    "Diabetes mellitus cursaria com hiperglicemia/glicosúria; aqui a glicemia é normal.",
+    "Correta: diabetes insipidus central — deficiência de ADH (neuro-hipófise).",
+    "Hiperaldosteronismo dá hipertensão/hipocalemia, não poliúria diluída maciça.",
+    "SIADH retém água (urina concentrada, hiponatremia) — o oposto.",
+    "Insuficiência renal aguda não produz esse padrão de urina muito diluída com sede intensa."
+  ],
+  psnc01: [
+    "Necrose caseosa é de tuberculose/granulomas, não do infarto cerebral.",
+    "Correta: falência energética → edema citotóxico e ↑Ca → morte neuronal, com necrose liquefativa.",
+    "Necrose coagulativa é a dos outros órgãos (coração, rim); o encéfalo faz liquefativa.",
+    "Não é apoptose isolada: há edema e necrose tecidual.",
+    "Necrose gordurosa é da pancreatite, não do SNC."
+  ],
+  psnc02: [
+    "Errado: o NÍVEL de consciência depende do tronco/SARA, não só do córtex.",
+    "Correta: nível (alerta) = tronco/SARA e lesões difusas; conteúdo (cognição) = córtex.",
+    "Inverte os conceitos: nível não é cognição.",
+    "A consciência é avaliável clinicamente (ex.: escala de Glasgow).",
+    "Rebaixamento do nível sugere lesão difusa/do tronco, não lesão focal cortical."
+  ],
+  psnc03: [
+    "Disfonia é alteração da VOZ (laringe), não do controle motor da articulação.",
+    "Correta: disartria = articulação (motor); afasia = linguagem (córtex); disfonia = voz (laringe).",
+    "Afasia é distúrbio de LINGUAGEM, não de audição.",
+    "Disartria é falha de articulação, não perda de vocabulário.",
+    "Afasia e disartria não são sinônimos: envolvem níveis diferentes (linguagem × articulação)."
+  ],
+  psnc04: [
+    "Inverte: início súbito é vascular (AVC); tumor costuma ser progressivo.",
+    "Correta: súbito → vascular; progressivo → tumoral/degenerativo; subagudo → inflamatório/infeccioso.",
+    "Nem todo início súbito é psicogênico — essa generalização é falsa.",
+    "O modo de início tem, sim, grande valor localizador/etiológico.",
+    "Subagudo aponta causa inflamatória/infecciosa, não vascular."
+  ],
+  pvb01: [
+    "A bile supersaturada de colesterol gera o cálculo de COLESTEROL, não o pigmentado.",
+    "Correta: colesterol (supersaturação; mulheres/obesidade) × pigmentado (bilirrubinato de cálcio; hemólise).",
+    "O cálculo misto não é só cálcio — tem 60–90% de colesterol.",
+    "O cálculo de colesterol vem de supersaturação, não de infecção bacteriana.",
+    "O pigmentado tem POUCO colesterol (<25%), é rico em bilirrubinato de cálcio."
+  ],
+  pvb02: [
+    "Não é adenocarcinoma: o achado é benigno (macrófagos com colesterol).",
+    "Correta: colesterolose — 'vesícula em morango' com macrófagos xantomatosos.",
+    "Colecistite crônica traz inflamação/fibrose, não o padrão em morango.",
+    "Vesícula em porcelana é calcificação da parede, não pontos amarelados na mucosa.",
+    "Pólipo adenomatoso é lesão epitelial neoplásica, quadro distinto."
+  ],
+  pvb03: [
+    "Blumberg (descompressão dolorosa em FID) é de apendicite, não da parada inspiratória no HCD.",
+    "Correta: sinal de Murphy — colecistite aguda por cálculo no ducto cístico.",
+    "Courvoisier é vesícula palpável indolor + icterícia (neoplasia periampular).",
+    "Giordano é a punho-percussão lombar dolorosa da pielonefrite.",
+    "Rovsing é dor em FID ao palpar a FIE (apendicite)."
+  ]
+};
+// aplica as análises às questões correspondentes
+QUESTIONS.forEach(q=>{ if(WHYS[q.id]) q.whys = WHYS[q.id]; });
+
 // Exporta para o app
 window.MEDQUEST_DATA = { DISCIPLINES, QUESTIONS, FLASHCARDS, SYLLABUS, SUMMARIES, CRONOGRAMA, IMAGES, LINKS };
