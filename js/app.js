@@ -98,6 +98,7 @@ function freshState(){
     taught:{}, // "ensine um colega": {"disc::topic": explicação}
     priority:{}, // temas marcados como "cai muito" {"disc::topic": true}
     trilha:{}, // progresso da trilha por tema {"disc::topic": {resumo:bool}}
+    auth:{id:"", email:"", token:""}, // login (Supabase Auth) para sync automática
     srs:{},                       // {cardId:{ef,interval,reps,due}}
     streak:{count:0, best:0, last:null},
     missions:{date:null, list:[]},
@@ -344,6 +345,7 @@ function pagesBase(){ return "https://"+CFG.GH_OWNER+".github.io/"+CFG.GH_REPO; 
 
 let _syncT=null;
 async function syncOnline(){
+  cloudAutoSave(); // se logado, salva o progresso completo na nuvem (debounce)
   // Supabase sincroniza sozinho (com debounce); GitHub usa envio manual (botão Publicar).
   if(provider()!=="supabase" || !S.profile.name) return;
   clearTimeout(_syncT);
@@ -1736,9 +1738,27 @@ function viewBadges(m){
   m.appendChild(bk);
 
   // Sincronização em nuvem (Supabase)
+  // Conta (login) — sincronização automática
+  if(supaOn()){
+    const ac=el("div","card mt");
+    if(loggedIn()){
+      ac.innerHTML=`<b>👤 Conta</b><p class="muted small mt">Conectado como <b>${esc(S.auth.email||"—")}</b>. Seu progresso <b>sincroniza sozinho</b> na nuvem — é só entrar com essa conta em qualquer aparelho.</p>`;
+      const out=el("button","btn ghost sm mt","Sair da conta"); out.onclick=authLogout; ac.appendChild(out);
+    } else {
+      ac.innerHTML=`<b>👤 Entrar / Criar conta</b><p class="muted small mt mb">Com uma conta, seu progresso sincroniza automaticamente entre celular e computador (sem precisar copiar código).</p>`;
+      const em=el("input","input"); em.type="email"; em.placeholder="seu email"; ac.appendChild(em);
+      const pw=el("input","input mt"); pw.type="password"; pw.placeholder="senha (mín. 6 caracteres)"; ac.appendChild(pw);
+      const row=el("div","btnrow mt");
+      const login=el("button","btn sm","Entrar"); login.onclick=()=>authAction(em.value.trim(), pw.value, false);
+      const signup=el("button","btn ghost sm","Criar conta"); signup.onclick=()=>authAction(em.value.trim(), pw.value, true);
+      row.append(login,signup); ac.appendChild(row);
+    }
+    m.appendChild(ac);
+  }
+
   if(supaOn()){
     const cl=el("div","card mt");
-    cl.innerHTML=`<b>☁️ Sincronização em nuvem</b><p class="muted small mt mb">Salve seu progresso na nuvem e recupere em qualquer aparelho usando o seu <b>ID de sincronização</b>.</p>`;
+    cl.innerHTML=`<b>☁️ Sincronização em nuvem (manual, por ID)</b><p class="muted small mt mb">Alternativa sem conta: salve/baixe usando o seu <b>ID de sincronização</b>.</p>`;
     const row=el("div","btnrow");
     const sv=el("button","btn sm","☁️ Salvar na nuvem"); sv.onclick=cloudSave;
     const ld=el("button","btn ghost sm","⬇️ Baixar (este ID)"); ld.onclick=()=>cloudLoad();
@@ -1900,19 +1920,45 @@ function openSearch(){
 /* ---------- Nuvem (Supabase): sincronização + mural ---------- */
 function supaOn(){ return !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY); }
 function supaHeaders(extra){ return Object.assign({ apikey:CFG.SUPABASE_ANON_KEY, Authorization:"Bearer "+CFG.SUPABASE_ANON_KEY, "Content-Type":"application/json" }, extra||{}); }
-async function cloudSave(){
+// ---- Login (Supabase Auth) para sync automática ----
+function loggedIn(){ return !!(S.auth && S.auth.id); }
+function syncId(){ return loggedIn() ? S.auth.id : S.profile.id; }
+async function authAction(email, pass, isSignup){
   if(!supaOn()){ toast("Nuvem não configurada."); return; }
+  if(!email||!pass){ toast("Preencha email e senha."); return; }
   try{
-    const body=[{ player_id:S.profile.id, name:S.profile.name||"", turma:S.profile.turma||"",
+    const path = isSignup ? "signup" : "token?grant_type=password";
+    const res=await fetch(CFG.SUPABASE_URL+"/auth/v1/"+path, {method:"POST", headers:{apikey:CFG.SUPABASE_ANON_KEY,"Content-Type":"application/json"}, body:JSON.stringify({email, password:pass})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){ toast(data.msg||data.error_description||data.error_code||("Falha ("+res.status+")")); return; }
+    const uid = (data.user&&data.user.id) || data.id;
+    if(isSignup && !data.access_token){ toast("Conta criada! Se pedir, confirme o email (ou desative a confirmação no Supabase) e faça login."); return; }
+    if(!uid){ toast("Não consegui autenticar."); return; }
+    S.auth={id:uid, email:email, token:data.access_token||""}; save();
+    // sincroniza: se há progresso na nuvem, pergunta; senão sobe o atual
+    let hasCloud=false; try{ const r=await fetch(CFG.SUPABASE_URL+"/rest/v1/saves?player_id=eq."+encodeURIComponent(uid)+"&select=player_id",{headers:supaHeaders()}); const rows=await r.json(); hasCloud=rows&&rows.length; }catch(e){}
+    toast(isSignup?"Conta criada e conectada! ✅":"Conectado! ✅");
+    if(hasCloud){ if(window.confirm("Encontrei um progresso salvo nesta conta. Baixar da nuvem? (substitui o atual)")) { await cloudLoad(uid, true); return; } }
+    await cloudSave(true); render();
+  }catch(e){ toast("Sem conexão."); }
+}
+function authLogout(){ S.auth={id:"",email:"",token:""}; save(); toast("Você saiu (o progresso continua neste aparelho)."); render(); }
+let _cloudT=null;
+function cloudAutoSave(){ if(!loggedIn()||!supaOn()) return; clearTimeout(_cloudT); _cloudT=setTimeout(()=>cloudSave(true), 4000); }
+
+async function cloudSave(silent){
+  if(!supaOn()){ if(!silent)toast("Nuvem não configurada."); return; }
+  try{
+    const body=[{ player_id:syncId(), name:S.profile.name||"", turma:S.profile.turma||"",
       data:btoa(unescape(encodeURIComponent(JSON.stringify(S)))) }];
     const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/saves", {method:"POST", headers:supaHeaders({Prefer:"resolution=merge-duplicates"}), body:JSON.stringify(body)});
-    toast(res.ok?"Progresso salvo na nuvem ☁️✅":("Falha ao salvar ("+res.status+"). O SQL já foi rodado?"));
-  }catch(e){ toast("Sem conexão com a nuvem."); }
+    if(!silent) toast(res.ok?"Progresso salvo na nuvem ☁️✅":("Falha ao salvar ("+res.status+"). O SQL já foi rodado?"));
+  }catch(e){ if(!silent) toast("Sem conexão com a nuvem."); }
 }
-async function cloudLoad(id){
+async function cloudLoad(id, skipConfirm){
   if(!supaOn()){ toast("Nuvem não configurada."); return; }
-  const pid=(id||S.profile.id).trim();
-  if(!confirm("Baixar da nuvem vai SUBSTITUIR seu progresso atual. Continuar?")) return;
+  const pid=(id||syncId()).trim();
+  if(!skipConfirm && !confirm("Baixar da nuvem vai SUBSTITUIR seu progresso atual. Continuar?")) return;
   try{
     const res=await fetch(CFG.SUPABASE_URL+"/rest/v1/saves?player_id=eq."+encodeURIComponent(pid)+"&select=data", {headers:supaHeaders()});
     if(!res.ok){ toast("Falha ao acessar a nuvem ("+res.status+")."); return; }
@@ -1920,7 +1966,7 @@ async function cloudLoad(id){
     if(!rows||!rows.length){ toast("Nenhum backup na nuvem para esse ID."); return; }
     const st=JSON.parse(decodeURIComponent(escape(atob(rows[0].data))));
     if(!st||!st.profile) throw 0;
-    S=migrate(st); save(); applyTheme(); applyFontScale(); toast("Progresso baixado da nuvem ✅"); go("home");
+    const keepAuth=S.auth; S=migrate(st); if(keepAuth&&keepAuth.id) S.auth=keepAuth; save(); applyTheme(); applyFontScale(); toast("Progresso baixado da nuvem ✅"); go("home");
   }catch(e){ toast("Backup da nuvem inválido."); }
 }
 async function muralFetch(disc){
@@ -2116,6 +2162,7 @@ applyTheme();
 applyFontScale();
 initReminder();
 const _sb=$("#searchbtn"); if(_sb) _sb.onclick=openSearch;
+try{ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden" && loggedIn() && supaOn()) cloudSave(true); }); }catch(e){}
 const _tb=$("#themebtn"); if(_tb) _tb.onclick=toggleTheme;
 ensureMissions();
 // sincroniza conquistas com o progresso atual (sem duplicar patamares já registrados)
